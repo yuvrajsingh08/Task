@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, X } from "lucide-react";
+import { Bell, Mail, Plus, X } from "lucide-react";
 import { useTasks } from "../../context/TaskContext";
 import DatePickerField from "../ui/DatePickerField";
 import SelectField from "../ui/SelectField";
@@ -77,7 +77,36 @@ function TaskForm() {
                 value={form.dueDate}
                 onChange={(value) => setFormValue("dueDate", value)}
               />
+              <label>
+                <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                  <Bell size={16} />
+                  Reminder
+                </span>
+                <input
+                  className="w-full rounded-xl border border-orange-100 bg-white px-3.5 py-3 text-slate-900 outline-none transition focus:border-orange-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  name="reminderAt"
+                  type="datetime-local"
+                  value={form.reminderAt}
+                  onChange={updateForm}
+                />
+              </label>
             </div>
+
+            <label className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <span className="flex items-center gap-2">
+                <Mail size={17} className="text-orange-500" />
+                Enable email reminder for this task
+              </span>
+              <input
+                checked={Boolean(form.reminderEmailEnabled)}
+                className="h-5 w-5 shrink-0 accent-orange-400"
+                name="reminderEmailEnabled"
+                type="checkbox"
+                onChange={(event) =>
+                  setFormValue("reminderEmailEnabled", event.target.checked)
+                }
+              />
+            </label>
 
             <label className="mt-3 block">
               <span className="mb-2 block text-sm font-semibold text-slate-600 dark:text-slate-300">

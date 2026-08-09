@@ -1,4 +1,4 @@
-import { CalendarDays, LogOut, Moon, Plus, Sun } from "lucide-react";
+import { LogOut, Moon, Plus, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTasks } from "../../context/TaskContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -14,9 +14,7 @@ function Topbar() {
         <p className="mb-1 text-xs font-black uppercase text-slate-500 dark:text-slate-400">
           Project board
         </p>
-        <h2 className="text-2xl font-black tracking-tight">
-          Project Tasks
-        </h2>
+        <h2 className="text-2xl font-black tracking-tight">Project Tasks</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Plan, track, and finish your daily work, {user?.name}.
         </p>
@@ -31,10 +29,6 @@ function Topbar() {
         </button>
         <span className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
           {stats.pending} pending
-        </span>
-        <span className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-          <CalendarDays size={16} />
-          Today
         </span>
         <button
           type="button"

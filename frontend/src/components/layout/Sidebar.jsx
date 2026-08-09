@@ -1,4 +1,4 @@
-import { Bot, ClipboardList, Flag, LayoutDashboard } from "lucide-react";
+import { Bot, ClipboardList } from "lucide-react";
 import { useTasks } from "../../context/TaskContext";
 import ProfileCard from "./ProfileCard";
 import StatCard from "../ui/StatCard";
@@ -22,21 +22,6 @@ function Sidebar() {
           </p>
         </div>
       </div>
-
-      <nav className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">
-        <a
-          className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white shadow lg:justify-start dark:bg-slate-100 dark:text-slate-900"
-          href="#tasks">
-          <LayoutDashboard size={18} />
-          Board
-        </a>
-        <a
-          className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 lg:justify-start dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-          href="#priority">
-          <Flag size={18} />
-          Priority
-        </a>
-      </nav>
 
       <ProfileCard />
 

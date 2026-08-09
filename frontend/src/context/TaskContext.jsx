@@ -8,7 +8,9 @@ export const emptyTaskForm = {
   description: "",
   priority: "Medium",
   category: "General",
-  dueDate: ""
+  dueDate: "",
+  reminderAt: "",
+  reminderEmailEnabled: false,
 };
 
 export function TaskProvider({ children }) {
@@ -18,6 +20,7 @@ export function TaskProvider({ children }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [dueDateFilter, setDueDateFilter] = useState("");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [aiSummary, setAiSummary] = useState(null);
@@ -25,10 +28,12 @@ export function TaskProvider({ children }) {
   const [message, setMessage] = useState("");
 
   const stats = useMemo(() => {
-    const completed = tasks.filter((task) => task.status === "Completed").length;
+    const completed = tasks.filter(
+      (task) => task.status === "Completed",
+    ).length;
     const pending = tasks.length - completed;
     const highPriority = tasks.filter(
-      (task) => task.status === "Pending" && task.priority === "High"
+      (task) => task.status === "Pending" && task.priority === "High",
     ).length;
 
     return { total: tasks.length, completed, pending, highPriority };
@@ -38,10 +43,17 @@ export function TaskProvider({ children }) {
     setLoading(true);
     try {
       const response = await api.get("/tasks", {
-        params: { search, status: statusFilter, priority: priorityFilter }
+        params: {
+          search,
+          status: statusFilter,
+          priority: priorityFilter,
+          category: categoryFilter,
+        },
       });
       const filteredTasks = dueDateFilter
-        ? response.data.filter((task) => task.dueDate?.slice(0, 10) === dueDateFilter)
+        ? response.data.filter(
+            (task) => task.dueDate?.slice(0, 10) === dueDateFilter,
+          )
         : response.data;
 
       setTasks(filteredTasks);
@@ -63,7 +75,7 @@ export function TaskProvider({ children }) {
 
   useEffect(() => {
     fetchTasks();
-  }, [search, statusFilter, priorityFilter, dueDateFilter]);
+  }, [search, statusFilter, priorityFilter, categoryFilter, dueDateFilter]);
 
   useEffect(() => {
     fetchAiSummary();
@@ -103,7 +115,9 @@ export function TaskProvider({ children }) {
 
     const payload = {
       ...form,
-      dueDate: form.dueDate || null
+      dueDate: form.dueDate || null,
+      reminderAt: form.reminderAt || null,
+      reminderEmailEnabled: Boolean(form.reminderEmailEnabled),
     };
 
     try {
@@ -131,7 +145,9 @@ export function TaskProvider({ children }) {
       description: task.description || "",
       priority: task.priority,
       category: task.category || "General",
-      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ""
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
+      reminderAt: task.reminderAt ? task.reminderAt.slice(0, 16) : "",
+      reminderEmailEnabled: Boolean(task.reminderEmailEnabled),
     });
     setIsTaskModalOpen(true);
   };
@@ -157,7 +173,9 @@ export function TaskProvider({ children }) {
       await fetchTasks();
       await fetchAiSummary();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Unable to update task status");
+      setMessage(
+        error.response?.data?.message || "Unable to update task status",
+      );
     }
   };
 
@@ -179,6 +197,7 @@ export function TaskProvider({ children }) {
     search,
     statusFilter,
     priorityFilter,
+    categoryFilter,
     dueDateFilter,
     aiSummary,
     loading,
@@ -188,6 +207,7 @@ export function TaskProvider({ children }) {
     setSearch,
     setStatusFilter,
     setPriorityFilter,
+    setCategoryFilter,
     setDueDateFilter,
     setFormValue,
     updateForm,
@@ -198,7 +218,7 @@ export function TaskProvider({ children }) {
     deleteTask,
     toggleTaskStatus,
     updateTaskField,
-    resetForm
+    resetForm,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

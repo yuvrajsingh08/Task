@@ -1,10 +1,12 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import {
+  Bell,
   CalendarDays,
   CheckCircle2,
   Circle,
   Flag,
   Folder,
+  Mail,
   X,
 } from "lucide-react";
 import SelectField from "../ui/SelectField";
@@ -45,6 +47,15 @@ function TaskDetailModal({ onClose, task }) {
         year: "numeric",
       })
     : "No due date";
+  const reminderDate = activeTask.reminderAt
+    ? new Date(activeTask.reminderAt).toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "No reminder";
 
   return (
     <Dialog.Root
@@ -113,6 +124,20 @@ function TaskDetailModal({ onClose, task }) {
                   )
                 }
                 label={activeTask.status}
+              />
+              <InfoChip
+                icon={<Bell size={17} className="text-orange-500" />}
+                label={reminderDate}
+                tone="bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
+              />
+              <InfoChip
+                icon={<Mail size={17} className="text-sky-500" />}
+                label={
+                  activeTask.reminderEmailEnabled
+                    ? `Email ${activeTask.reminderEmailStatus || "pending"}`
+                    : "Email off"
+                }
+                tone="bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
               />
             </div>
 

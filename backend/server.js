@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./src/config/db");
 const authRoutes = require("./src/routes/authRoutes");
 const taskRoutes = require("./src/routes/taskRoutes");
+const { startReminderScheduler } = require("./src/services/reminderService");
 
 dotenv.config();
 
@@ -26,4 +27,5 @@ app.use("/api/tasks", taskRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startReminderScheduler();
 });

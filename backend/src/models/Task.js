@@ -31,6 +31,27 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    reminderAt: {
+      type: Date,
+      default: null
+    },
+    reminderEmailEnabled: {
+      type: Boolean,
+      default: false
+    },
+    reminderEmailSentAt: {
+      type: Date,
+      default: null
+    },
+    reminderEmailStatus: {
+      type: String,
+      enum: ["pending", "sent", "skipped", "failed"],
+      default: "pending"
+    },
+    reminderLastError: {
+      type: String,
+      default: ""
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

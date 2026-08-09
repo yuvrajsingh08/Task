@@ -1,4 +1,10 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTasks } from "../../context/TaskContext";
 import SelectField from "../ui/SelectField";
@@ -17,15 +23,20 @@ function TaskFilters() {
   const {
     dueDateFilter,
     priorityFilter,
+    categoryFilter,
     search,
+    tasks,
     setDueDateFilter,
     setPriorityFilter,
     setSearch,
     setStatusFilter,
+    setCategoryFilter,
     statusFilter,
   } = useTasks();
   const [visibleMonth, setVisibleMonth] = useState(() => {
-    const baseDate = dueDateFilter ? new Date(`${dueDateFilter}T00:00:00`) : new Date();
+    const baseDate = dueDateFilter
+      ? new Date(`${dueDateFilter}T00:00:00`)
+      : new Date();
     return new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
   });
 
@@ -50,9 +61,18 @@ function TaskFilters() {
     year: "numeric",
   });
 
+  const categoryOptions = useMemo(() => {
+    const uniqueCategories = Array.from(
+      new Set(tasks.map((task) => task.category || "General")),
+    ).sort((left, right) => left.localeCompare(right));
+
+    return ["All", ...uniqueCategories];
+  }, [tasks]);
+
   const changeMonth = (offset) => {
     setVisibleMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() + offset, 1),
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() + offset, 1),
     );
   };
 
@@ -60,7 +80,7 @@ function TaskFilters() {
     <div
       className="mb-4 grid gap-3 rounded-2xl border border-orange-100 bg-white p-3 shadow-sm shadow-orange-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none sm:p-4 xl:grid-cols-[minmax(0,1fr)_21rem]"
       id="tasks">
-      <div className="grid content-start gap-3 md:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+      <div className="grid content-start gap-3 md:grid-cols-[minmax(0,1fr)_12rem_12rem_12rem]">
         <label className="flex min-w-0 items-center gap-2 rounded-xl border border-orange-100 bg-[#fff8f4] px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800">
           <Search size={18} className="text-slate-400" />
           <input
@@ -81,6 +101,12 @@ function TaskFilters() {
           value={priorityFilter}
           onChange={setPriorityFilter}
           options={["All", "Low", "Medium", "High"]}
+        />
+        <SelectField
+          label="Category"
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          options={categoryOptions}
         />
         {dueDateFilter && (
           <button

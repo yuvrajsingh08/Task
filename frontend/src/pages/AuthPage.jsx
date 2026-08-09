@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { CheckCircle2, LockKeyhole, LogIn, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, LockKeyhole, LogIn, Mail, UserPlus } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const initialForm = {
@@ -8,31 +9,72 @@ const initialForm = {
   password: "",
 };
 
+const isEmailFormatValid = (value = "") => {
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  const emailPattern =
+    /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i;
+  return (
+    emailPattern.test(normalized) &&
+    !normalized.startsWith(".") &&
+    !normalized.endsWith(".")
+  );
+};
+
 function AuthPage() {
-  const [mode, setMode] = useState("login");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const initialMode = location.pathname === "/signup" ? "signup" : "login";
+  const [mode, setMode] = useState(initialMode);
+  const [isRecovery, setIsRecovery] = useState(false);
   const [form, setForm] = useState(initialForm);
-  const { authLoading, authMessage, login, signup } = useAuth();
+  const [formMessage, setFormMessage] = useState("");
+  const { authLoading, authMessage, login, signup, forgotPassword } = useAuth();
   const isSignup = mode === "signup";
+
+  useEffect(() => {
+    setMode(initialMode);
+    setIsRecovery(false);
+    setFormMessage("");
+    setForm(initialForm);
+  }, [initialMode]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    setFormMessage("");
     setForm((current) => ({ ...current, [name]: value }));
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (isSignup) {
-      signup(form);
+    const normalizedEmail = form.email.trim().toLowerCase();
+
+    if (!isEmailFormatValid(normalizedEmail)) {
+      setFormMessage("Please enter a valid email address");
       return;
     }
 
-    login({ email: form.email, password: form.password });
+    if (isRecovery) {
+      forgotPassword(normalizedEmail);
+      return;
+    }
+
+    if (isSignup) {
+      signup({ ...form, email: normalizedEmail });
+      return;
+    }
+
+    login({ email: normalizedEmail, password: form.password });
   };
 
   const switchMode = (nextMode) => {
-    setMode(nextMode);
-    setForm(initialForm);
+    const nextPath = nextMode === "signup" ? "/signup" : "/login";
+    navigate(nextPath);
   };
 
   return (
@@ -94,12 +136,18 @@ function AuthPage() {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                {isSignup ? "Create Account" : "Welcome Back"}
+                {isRecovery
+                  ? "Recover Access"
+                  : isSignup
+                    ? "Create Account"
+                    : "Welcome Back"}
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                {isSignup
-                  ? "Signup to start your board."
-                  : "Login to continue your board."}
+                {isRecovery
+                  ? "Enter your email and we will guide you through recovery."
+                  : isSignup
+                    ? "Signup to start your board."
+                    : "Login to continue your board."}
               </p>
             </div>
           </div>
@@ -125,31 +173,52 @@ function AuthPage() {
             required
           />
 
-          <input
-            className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-pink-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="Password"
-            minLength="6"
-            required
-          />
+          {!isRecovery && (
+            <input
+              className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-pink-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              name="password"
+              type="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Password"
+              minLength="6"
+              required
+            />
+          )}
 
-          {authMessage && (
-            <p className="mt-3 text-sm text-rose-500">{authMessage}</p>
+          {(formMessage || authMessage) && (
+            <p className="mt-3 text-sm text-rose-500">
+              {formMessage || authMessage}
+            </p>
+          )}
+
+          {!isSignup && !isRecovery && (
+            <button
+              type="button"
+              className="mt-3 text-sm font-semibold text-pink-600 transition hover:text-pink-700 dark:text-pink-400"
+              onClick={() => setIsRecovery(true)}>
+              Forgot password?
+            </button>
           )}
 
           <button
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
             type="submit"
             disabled={authLoading}>
-            {isSignup ? <UserPlus size={18} /> : <LogIn size={18} />}
+            {isRecovery ? (
+              <Mail size={18} />
+            ) : isSignup ? (
+              <UserPlus size={18} />
+            ) : (
+              <LogIn size={18} />
+            )}
             {authLoading
               ? "Please wait..."
-              : isSignup
-                ? "Create Account"
-                : "Login"}
+              : isRecovery
+                ? "Send recovery email"
+                : isSignup
+                  ? "Create Account"
+                  : "Login"}
           </button>
         </form>
       </section>

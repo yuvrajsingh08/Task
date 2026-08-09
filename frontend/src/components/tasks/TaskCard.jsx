@@ -1,9 +1,11 @@
 import {
+  Bell,
   CalendarDays,
   CheckCircle2,
   Circle,
   Flag,
   Folder,
+  Mail,
 } from "lucide-react";
 import { useTasks } from "../../context/TaskContext";
 import TaskActionMenu from "./TaskActionMenu";
@@ -37,6 +39,15 @@ function TaskCard({ onOpen, task }) {
         day: "numeric",
       })
     : "No due date";
+  const reminderDateObj = task.reminderAt ? new Date(task.reminderAt) : null;
+  const reminderLabel = reminderDateObj
+    ? reminderDateObj.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
 
   const handleMenuClick = (callback) => (event) => {
     event.stopPropagation();
@@ -142,6 +153,18 @@ function TaskCard({ onOpen, task }) {
             {dueDateLabel}
             {isOverdue && <span className="font-semibold">overdue</span>}
           </span>
+          {reminderLabel && (
+            <span className="flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-1 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">
+              <Bell size={13} />
+              {reminderLabel}
+            </span>
+          )}
+          {task.reminderEmailEnabled && (
+            <span className="flex items-center gap-1.5 rounded-full bg-sky-100 px-2.5 py-1 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
+              <Mail size={13} />
+              {task.reminderEmailStatus === "sent" ? "Email sent" : "Email on"}
+            </span>
+          )}
         </div>
       </div>
     </article>
