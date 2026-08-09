@@ -7,8 +7,11 @@ const {
   toggleTaskStatus,
   getAiSummary
 } = require("../controllers/taskController");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+router.use(protect);
 
 router.get("/", getTasks);
 router.post("/", createTask);

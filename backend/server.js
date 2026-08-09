@@ -3,6 +3,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const connectDB = require("./src/config/db");
+const authRoutes = require("./src/routes/authRoutes");
 const taskRoutes = require("./src/routes/taskRoutes");
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Smart Task Management API is running" });
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.listen(PORT, () => {

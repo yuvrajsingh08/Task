@@ -3,7 +3,7 @@ const Task = require("../models/Task");
 const getTasks = async (req, res) => {
   try {
     const { search, status, priority } = req.query;
-    const query = {};
+    const query = { user: req.user._id };
 
     if (search) {
       query.$or = [
@@ -30,7 +30,7 @@ const getTasks = async (req, res) => {
 
 const createTask = async (req, res) => {
   try {
-    const task = await Task.create(req.body);
+    const task = await Task.create({ ...req.body, user: req.user._id });
     res.status(201).json(task);
   } catch (error) {
     res.status(400).json({ message: "Failed to create task", error: error.message });
@@ -39,7 +39,7 @@ const createTask = async (req, res) => {
 
 const updateTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+    const task = await Task.findOneAndUpdate({ _id: req.params.id, user: req.user._id }, req.body, {
       new: true,
       runValidators: true
     });
@@ -56,7 +56,7 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndDelete(req.params.id);
+    const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.user._id });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
@@ -70,7 +70,7 @@ const deleteTask = async (req, res) => {
 
 const toggleTaskStatus = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
@@ -87,7 +87,7 @@ const toggleTaskStatus = async (req, res) => {
 
 const getAiSummary = async (req, res) => {
   try {
-    const tasks = await Task.find();
+    const tasks = await Task.find({ user: req.user._id });
     const total = tasks.length;
     const completed = tasks.filter((task) => task.status === "Completed").length;
     const pending = total - completed;
