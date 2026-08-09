@@ -18,6 +18,8 @@ export function TaskProvider({ children }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
+  const [dueDateFilter, setDueDateFilter] = useState("");
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [aiSummary, setAiSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -38,7 +40,11 @@ export function TaskProvider({ children }) {
       const response = await api.get("/tasks", {
         params: { search, status: statusFilter, priority: priorityFilter }
       });
-      setTasks(response.data);
+      const filteredTasks = dueDateFilter
+        ? response.data.filter((task) => task.dueDate?.slice(0, 10) === dueDateFilter)
+        : response.data;
+
+      setTasks(filteredTasks);
     } catch (error) {
       setMessage(error.response?.data?.message || "Unable to load tasks");
     } finally {
@@ -57,7 +63,7 @@ export function TaskProvider({ children }) {
 
   useEffect(() => {
     fetchTasks();
-  }, [search, statusFilter, priorityFilter]);
+  }, [search, statusFilter, priorityFilter, dueDateFilter]);
 
   useEffect(() => {
     fetchAiSummary();
@@ -68,9 +74,23 @@ export function TaskProvider({ children }) {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const setFormValue = (name, value) => {
+    setForm((current) => ({ ...current, [name]: value }));
+  };
+
   const resetForm = () => {
     setForm(emptyTaskForm);
     setEditingId(null);
+  };
+
+  const openTaskModal = () => {
+    resetForm();
+    setIsTaskModalOpen(true);
+  };
+
+  const closeTaskModal = () => {
+    setIsTaskModalOpen(false);
+    resetForm();
   };
 
   const saveTask = async (event) => {
@@ -96,6 +116,7 @@ export function TaskProvider({ children }) {
       }
 
       resetForm();
+      setIsTaskModalOpen(false);
       await fetchTasks();
       await fetchAiSummary();
     } catch (error) {
@@ -112,7 +133,7 @@ export function TaskProvider({ children }) {
       category: task.category || "General",
       dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ""
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsTaskModalOpen(true);
   };
 
   const deleteTask = async (id) => {
@@ -140,6 +161,17 @@ export function TaskProvider({ children }) {
     }
   };
 
+  const updateTaskField = async (id, field, value) => {
+    try {
+      await api.put(`/tasks/${id}`, { [field]: value });
+      setMessage("Task updated successfully");
+      await fetchTasks();
+      await fetchAiSummary();
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Unable to update task");
+    }
+  };
+
   const value = {
     tasks,
     form,
@@ -147,18 +179,25 @@ export function TaskProvider({ children }) {
     search,
     statusFilter,
     priorityFilter,
+    dueDateFilter,
     aiSummary,
     loading,
     message,
     stats,
+    isTaskModalOpen,
     setSearch,
     setStatusFilter,
     setPriorityFilter,
+    setDueDateFilter,
+    setFormValue,
     updateForm,
     saveTask,
     startEdit,
+    openTaskModal,
+    closeTaskModal,
     deleteTask,
     toggleTaskStatus,
+    updateTaskField,
     resetForm
   };
 

@@ -1,4 +1,5 @@
 import AppLayout from "../components/layout/AppLayout";
+import OverviewCards from "../components/layout/OverviewCards";
 import TaskFilters from "../components/tasks/TaskFilters";
 import TaskForm from "../components/tasks/TaskForm";
 import TaskList from "../components/tasks/TaskList";
@@ -11,9 +12,14 @@ function Dashboard() {
   return (
     <AppLayout>
       <Topbar />
+      <OverviewCards />
       <TaskForm />
       <TaskFilters />
-      {message && <p className="message">{message}</p>}
+      {message && (
+        <p className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+          {message}
+        </p>
+      )}
       <TaskList />
     </AppLayout>
   );
