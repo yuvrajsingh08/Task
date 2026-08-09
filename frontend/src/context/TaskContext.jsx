@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api";
+import { useToast } from "./ToastContext";
 
 const TaskContext = createContext();
 
@@ -14,6 +15,7 @@ export const emptyTaskForm = {
 };
 
 export function TaskProvider({ children }) {
+  const { showToast } = useToast();
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState(emptyTaskForm);
   const [editingId, setEditingId] = useState(null);
@@ -58,7 +60,9 @@ export function TaskProvider({ children }) {
 
       setTasks(filteredTasks);
     } catch (error) {
-      setMessage(error.response?.data?.message || "Unable to load tasks");
+      const message = error.response?.data?.message || "Unable to load tasks";
+      setMessage(message);
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }
@@ -109,7 +113,9 @@ export function TaskProvider({ children }) {
     event.preventDefault();
 
     if (!form.title.trim()) {
-      setMessage("Task title is required");
+      const message = "Task title is required";
+      setMessage(message);
+      showToast(message, "error");
       return;
     }
 
@@ -123,10 +129,14 @@ export function TaskProvider({ children }) {
     try {
       if (editingId) {
         await api.put(`/tasks/${editingId}`, payload);
-        setMessage("Task updated successfully");
+        const message = "Task updated successfully";
+        setMessage(message);
+        showToast(message, "success");
       } else {
         await api.post("/tasks", payload);
-        setMessage("Task added successfully");
+        const message = "Task added successfully";
+        setMessage(message);
+        showToast(message, "success");
       }
 
       resetForm();
@@ -134,7 +144,9 @@ export function TaskProvider({ children }) {
       await fetchTasks();
       await fetchAiSummary();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Unable to save task");
+      const message = error.response?.data?.message || "Unable to save task";
+      setMessage(message);
+      showToast(message, "error");
     }
   };
 
@@ -159,34 +171,46 @@ export function TaskProvider({ children }) {
 
     try {
       await api.delete(`/tasks/${id}`);
-      setMessage("Task deleted successfully");
+      const message = "Task deleted successfully";
+      setMessage(message);
+      showToast(message, "success");
       await fetchTasks();
       await fetchAiSummary();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Unable to delete task");
+      const message = error.response?.data?.message || "Unable to delete task";
+      setMessage(message);
+      showToast(message, "error");
     }
   };
 
   const toggleTaskStatus = async (id) => {
     try {
       await api.patch(`/tasks/${id}/toggle`);
+      const message = "Task status updated";
+      setMessage(message);
+      showToast(message, "success");
       await fetchTasks();
       await fetchAiSummary();
     } catch (error) {
-      setMessage(
-        error.response?.data?.message || "Unable to update task status",
-      );
+      const message =
+        error.response?.data?.message || "Unable to update task status";
+      setMessage(message);
+      showToast(message, "error");
     }
   };
 
   const updateTaskField = async (id, field, value) => {
     try {
       await api.put(`/tasks/${id}`, { [field]: value });
-      setMessage("Task updated successfully");
+      const message = "Task updated successfully";
+      setMessage(message);
+      showToast(message, "success");
       await fetchTasks();
       await fetchAiSummary();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Unable to update task");
+      const message = error.response?.data?.message || "Unable to update task";
+      setMessage(message);
+      showToast(message, "error");
     }
   };
 

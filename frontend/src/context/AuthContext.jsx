@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../api";
+import { useToast } from "./ToastContext";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const { showToast } = useToast();
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("taskflowUser");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -47,8 +49,11 @@ export function AuthProvider({ children }) {
     try {
       const response = await api.post("/auth/signup", form);
       saveSession(response.data);
+      showToast("Welcome! Your account has been created.", "success");
     } catch (error) {
-      setAuthMessage(error.response?.data?.message || "Signup failed");
+      const message = error.response?.data?.message || "Signup failed";
+      setAuthMessage(message);
+      showToast(message, "error");
     } finally {
       setAuthLoading(false);
     }
@@ -61,8 +66,11 @@ export function AuthProvider({ children }) {
     try {
       const response = await api.post("/auth/login", form);
       saveSession(response.data);
+      showToast("Logged in successfully.", "success");
     } catch (error) {
-      setAuthMessage(error.response?.data?.message || "Login failed");
+      const message = error.response?.data?.message || "Login failed";
+      setAuthMessage(message);
+      showToast(message, "error");
     } finally {
       setAuthLoading(false);
     }
@@ -74,11 +82,14 @@ export function AuthProvider({ children }) {
 
     try {
       const response = await api.post("/auth/forgot-password", { email });
-      setAuthMessage(response.data.message || "Recovery instructions sent");
+      const message = response.data.message || "Recovery instructions sent";
+      setAuthMessage(message);
+      showToast(message, "info");
     } catch (error) {
-      setAuthMessage(
-        error.response?.data?.message || "Unable to process recovery request",
-      );
+      const message =
+        error.response?.data?.message || "Unable to process recovery request";
+      setAuthMessage(message);
+      showToast(message, "error");
     } finally {
       setAuthLoading(false);
     }
@@ -92,9 +103,10 @@ export function AuthProvider({ children }) {
       localStorage.setItem("taskflowUser", JSON.stringify(response.data.user));
       setUser(response.data.user);
     } catch (error) {
-      setAuthMessage(
-        error.response?.data?.message || "Unable to update email settings",
-      );
+      const message =
+        error.response?.data?.message || "Unable to update email settings";
+      setAuthMessage(message);
+      showToast(message, "error");
     }
   };
 
@@ -102,6 +114,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("taskflowToken");
     localStorage.removeItem("taskflowUser");
     setUser(null);
+    showToast("You have been logged out.", "info");
   };
 
   return (
