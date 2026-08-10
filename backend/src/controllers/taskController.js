@@ -67,6 +67,40 @@ const getTasks = async (req, res) => {
       query.category = normalizeCategory(category);
     }
 
+    const page = req.query.page ? parseInt(req.query.page, 10) : null;
+    const pageSizeParam = req.query.pageSize
+      ? parseInt(req.query.pageSize, 10)
+      : null;
+
+    if (page) {
+      const DEFAULT_PAGE_SIZE = 10;
+      const MAX_PAGE_SIZE = 100;
+      const pageSize =
+        Number.isFinite(pageSizeParam) && pageSizeParam > 0
+          ? Math.min(pageSizeParam, MAX_PAGE_SIZE)
+          : DEFAULT_PAGE_SIZE;
+
+      const currentPage = Math.max(1, page);
+
+      const total = await Task.countDocuments(query);
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+      const tasks = await Task.find(query)
+        .sort({ createdAt: -1 })
+        .skip((currentPage - 1) * pageSize)
+        .limit(pageSize);
+
+      return res.json({
+        tasks,
+        meta: {
+          total,
+          page: currentPage,
+          pageSize,
+          totalPages,
+        },
+      });
+    }
+
     const tasks = await Task.find(query).sort({ createdAt: -1 });
     res.json(tasks);
   } catch (error) {
