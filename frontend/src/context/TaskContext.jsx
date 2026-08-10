@@ -28,6 +28,10 @@ export function TaskProvider({ children }) {
   const [aiSummary, setAiSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTasks, setTotalTasks] = useState(0);
 
   const stats = useMemo(() => {
     const completed = tasks.filter(
@@ -50,13 +54,28 @@ export function TaskProvider({ children }) {
           status: statusFilter,
           priority: priorityFilter,
           category: categoryFilter,
+          page,
+          pageSize,
         },
       });
+
+      // Support both paginated and legacy (array) responses
+      let fetchedTasks = [];
+      if (Array.isArray(response.data)) {
+        fetchedTasks = response.data;
+        setTotalTasks(response.data.length);
+        setTotalPages(1);
+      } else if (response.data && response.data.tasks) {
+        fetchedTasks = response.data.tasks;
+        setTotalTasks(response.data.meta?.total || 0);
+        setTotalPages(response.data.meta?.totalPages || 1);
+      }
+
       const filteredTasks = dueDateFilter
-        ? response.data.filter(
+        ? fetchedTasks.filter(
             (task) => task.dueDate?.slice(0, 10) === dueDateFilter,
           )
-        : response.data;
+        : fetchedTasks;
 
       setTasks(filteredTasks);
     } catch (error) {
@@ -77,9 +96,14 @@ export function TaskProvider({ children }) {
     }
   };
 
+  // reset to first page when filters/search change
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, priorityFilter, categoryFilter, dueDateFilter]);
+
   useEffect(() => {
     fetchTasks();
-  }, [search, statusFilter, priorityFilter, categoryFilter, dueDateFilter]);
+  }, [search, statusFilter, priorityFilter, categoryFilter, dueDateFilter, page, pageSize]);
 
   useEffect(() => {
     fetchAiSummary();
@@ -216,6 +240,10 @@ export function TaskProvider({ children }) {
 
   const value = {
     tasks,
+    page,
+    pageSize,
+    totalPages,
+    totalTasks,
     form,
     editingId,
     search,
@@ -232,6 +260,8 @@ export function TaskProvider({ children }) {
     setStatusFilter,
     setPriorityFilter,
     setCategoryFilter,
+    setPage,
+    setPageSize,
     setDueDateFilter,
     setFormValue,
     updateForm,
