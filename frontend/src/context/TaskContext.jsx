@@ -73,7 +73,7 @@ export function TaskProvider({ children }) {
 
       const filteredTasks = dueDateFilter
         ? fetchedTasks.filter(
-            (task) => task.dueDate?.slice(0, 10) === dueDateFilter,
+            (task) => formatLocalDate(task.dueDate) === dueDateFilter,
           )
         : fetchedTasks;
 
@@ -103,11 +103,55 @@ export function TaskProvider({ children }) {
 
   useEffect(() => {
     fetchTasks();
-  }, [search, statusFilter, priorityFilter, categoryFilter, dueDateFilter, page, pageSize]);
+  }, [
+    search,
+    statusFilter,
+    priorityFilter,
+    categoryFilter,
+    dueDateFilter,
+    page,
+    pageSize,
+  ]);
 
   useEffect(() => {
     fetchAiSummary();
   }, [tasks.length]);
+
+  const formatLocalDate = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatLocalDateTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const toUtcISOStringForDate = (value) => {
+    if (!value) return null;
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  };
+
+  const toUtcISOStringForDateTimeLocal = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  };
 
   const updateForm = (event) => {
     const { name, value } = event.target;
@@ -145,8 +189,8 @@ export function TaskProvider({ children }) {
 
     const payload = {
       ...form,
-      dueDate: form.dueDate || null,
-      reminderAt: form.reminderAt || null,
+      dueDate: toUtcISOStringForDate(form.dueDate),
+      reminderAt: toUtcISOStringForDateTimeLocal(form.reminderAt),
       reminderEmailEnabled: Boolean(form.reminderEmailEnabled),
     };
 
@@ -181,8 +225,8 @@ export function TaskProvider({ children }) {
       description: task.description || "",
       priority: task.priority,
       category: task.category || "General",
-      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
-      reminderAt: task.reminderAt ? task.reminderAt.slice(0, 16) : "",
+      dueDate: task.dueDate ? formatLocalDate(task.dueDate) : "",
+      reminderAt: task.reminderAt ? formatLocalDateTime(task.reminderAt) : "",
       reminderEmailEnabled: Boolean(task.reminderEmailEnabled),
     });
     setIsTaskModalOpen(true);
