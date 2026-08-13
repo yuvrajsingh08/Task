@@ -7,14 +7,14 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const { showToast } = useToast();
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("taskflowUser");
+    const savedUser = localStorage.getItem("stackUser");
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("taskflowToken");
+    const token = localStorage.getItem("stackToken");
 
     if (!token) {
       return;
@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
         const response = await api.get("/auth/profile");
         setUser(response.data.user);
         localStorage.setItem(
-          "taskflowUser",
+          "stackUser",
           JSON.stringify(response.data.user),
         );
       } catch (error) {
@@ -37,8 +37,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const saveSession = (data) => {
-    localStorage.setItem("taskflowToken", data.token);
-    localStorage.setItem("taskflowUser", JSON.stringify(data.user));
+    localStorage.setItem("stackToken", data.token);
+    localStorage.setItem("stackUser", JSON.stringify(data.user));
     setUser(data.user);
   };
 
@@ -100,7 +100,7 @@ export function AuthProvider({ children }) {
       const response = await api.patch("/auth/profile/preferences", {
         emailNotificationsEnabled: enabled,
       });
-      localStorage.setItem("taskflowUser", JSON.stringify(response.data.user));
+      localStorage.setItem("stackUser", JSON.stringify(response.data.user));
       setUser(response.data.user);
     } catch (error) {
       const message =
@@ -111,8 +111,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("taskflowToken");
-    localStorage.removeItem("taskflowUser");
+    localStorage.removeItem("stackToken");
+    localStorage.removeItem("stackUser");
     setUser(null);
     showToast("You have been logged out.", "info");
   };

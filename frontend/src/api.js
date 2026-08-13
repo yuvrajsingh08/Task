@@ -5,7 +5,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("taskflowToken");
+  const token = localStorage.getItem("stackToken");
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

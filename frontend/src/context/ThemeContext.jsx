@@ -8,7 +8,7 @@ export function ThemeProvider({ children }) {
       return "light";
     }
 
-    const savedTheme = window.localStorage.getItem("taskflow-theme");
+    const savedTheme = window.localStorage.getItem("stack-theme");
     if (savedTheme === "dark" || savedTheme === "light") {
       return savedTheme;
     }
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem("taskflow-theme", theme);
+    window.localStorage.setItem("stack-theme", theme);
   }, [theme]);
 
   const value = useMemo(
