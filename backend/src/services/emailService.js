@@ -1,50 +1,24 @@
 const sgMail = require("@sendgrid/mail");
-let nodemailer = null;
-
-try {
-  nodemailer = require("nodemailer");
-} catch (error) {
-  nodemailer = null;
-}
-
-const isSendGridConfigured = () => {
-  return Boolean(
-    process.env.SENDGRID_API_KEY &&
-    (process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM),
-  );
-};
-
-const isSmtpConfigured = () => {
-  return Boolean(
-    nodemailer &&
-    process.env.SMTP_HOST &&
-    process.env.SMTP_PORT &&
-    process.env.SMTP_USER &&
-    process.env.SMTP_PASS,
-  );
-};
 
 const isEmailConfigured = () => {
-  return isSendGridConfigured() || isSmtpConfigured();
+  return Boolean(
+    process.env.SENDGRID_API_KEY &&
+    (process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM)
+  );
 };
 
-const createSmtpTransporter = () => {
-  if (!isSmtpConfigured()) {
-    return null;
+const sendMail = async ({ to, subject, text, html }) => {
+  if (!isEmailConfigured()) {
+    return {
+      skipped: true,
+      reason:
+        "Email is not configured. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL.",
+    };
   }
 
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-};
+  const from =
+    process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM;
 
-const sendGridSendMail = async ({ from, to, subject, text, html }) => {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
   await sgMail.send({
@@ -54,53 +28,8 @@ const sendGridSendMail = async ({ from, to, subject, text, html }) => {
     text,
     html,
   });
-};
 
-const sendSmtpMail = async ({ from, to, subject, text, html }) => {
-  const transporter = createSmtpTransporter();
-
-  if (!transporter) {
-    throw new Error("SMTP email is not configured.");
-  }
-
-  await transporter.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  });
-};
-
-const sendMail = async ({ to, subject, text, html }) => {
-  const from =
-    process.env.EMAIL_FROM ||
-    process.env.SENDGRID_FROM_EMAIL ||
-    process.env.SMTP_USER;
-
-  if (!from) {
-    return {
-      skipped: true,
-      reason:
-        "Email sender address is not configured. Set EMAIL_FROM or SENDGRID_FROM_EMAIL.",
-    };
-  }
-
-  if (isSendGridConfigured()) {
-    await sendGridSendMail({ from, to, subject, text, html });
-    return { skipped: false };
-  }
-
-  if (isSmtpConfigured()) {
-    await sendSmtpMail({ from, to, subject, text, html });
-    return { skipped: false };
-  }
-
-  return {
-    skipped: true,
-    reason:
-      "Email is not configured. Use SENDGRID_API_KEY with SENDGRID_FROM_EMAIL, or SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS.",
-  };
+  return { skipped: false };
 };
 
 const formatDate = (date) => {
@@ -111,7 +40,7 @@ const formatDate = (date) => {
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
+  }).format(new Date(date));
 };
 
 const escapeHtml = (value) => {
@@ -128,18 +57,15 @@ const sendTaskReminderEmail = async ({ task, user }) => {
     return {
       skipped: true,
       reason:
-        "Email is not configured. Use SENDGRID_API_KEY with SENDGRID_FROM_EMAIL, or SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS.",
+        "Email is not configured. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL.",
     };
   }
 
   const appName = process.env.APP_NAME || "TaskFlow";
-  const from =
-    process.env.EMAIL_FROM ||
-    process.env.SENDGRID_FROM_EMAIL ||
-    process.env.SMTP_USER;
+
   const safeTitle = escapeHtml(task.title);
   const safeDescription = escapeHtml(
-    task.description || "No description added.",
+    task.description || "No description added."
   );
   const safePriority = escapeHtml(task.priority);
   const safeCategory = escapeHtml(task.category || "General");
@@ -158,13 +84,28 @@ const sendTaskReminderEmail = async ({ task, user }) => {
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a;">
       <h2 style="margin: 0 0 12px;">${appName} reminder</h2>
-      <p><strong>${safeTitle}</strong></p>
-      <p>${safeDescription}</p>
+
+      <p>
+        <strong>${safeTitle}</strong>
+      </p>
+
+      <p>
+        ${safeDescription}
+      </p>
+
       <ul>
-        <li><strong>Priority:</strong> ${safePriority}</li>
-        <li><strong>Category:</strong> ${safeCategory}</li>
-        <li><strong>Due date:</strong> ${formatDate(task.dueDate)}</li>
-        <li><strong>Reminder:</strong> ${formatDate(task.reminderAt)}</li>
+        <li>
+          <strong>Priority:</strong> ${safePriority}
+        </li>
+        <li>
+          <strong>Category:</strong> ${safeCategory}
+        </li>
+        <li>
+          <strong>Due date:</strong> ${formatDate(task.dueDate)}
+        </li>
+        <li>
+          <strong>Reminder:</strong> ${formatDate(task.reminderAt)}
+        </li>
       </ul>
     </div>
   `;
@@ -184,20 +125,17 @@ const sendPasswordResetEmail = async ({ to, resetLink }) => {
     return {
       skipped: true,
       reason:
-        "Email is not configured. Use SENDGRID_API_KEY with SENDGRID_FROM_EMAIL, or SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS.",
+        "Email is not configured. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL.",
     };
   }
 
   const appName = process.env.APP_NAME || "TaskFlow";
-  const from =
-    process.env.EMAIL_FROM ||
-    process.env.SENDGRID_FROM_EMAIL ||
-    process.env.SMTP_USER;
 
   const textBody = [
-    `Hello,`,
+    "Hello,",
     "",
     `You requested a password reset for ${appName}.`,
+    "",
     `Use this link to continue: ${resetLink}`,
     "",
     "If you did not request this, you can ignore this email.",
@@ -205,9 +143,45 @@ const sendPasswordResetEmail = async ({ to, resetLink }) => {
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a;">
-      <h2 style="margin: 0 0 12px;">${appName} password reset</h2>
-      <p>Use the link below to continue your password reset.</p>
-      <p><a href="${resetLink}">${resetLink}</a></p>
+      <h2 style="margin: 0 0 12px;">
+        ${appName} password reset
+      </h2>
+
+      <p>
+        You requested a password reset for your account.
+      </p>
+
+      <p>
+        Click the button below to reset your password:
+      </p>
+
+      <p>
+        <a
+          href="${resetLink}"
+          style="
+            display: inline-block;
+            padding: 10px 18px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+          "
+        >
+          Reset Password
+        </a>
+      </p>
+
+      <p>
+        Or copy and paste this link into your browser:
+      </p>
+
+      <p>
+        ${escapeHtml(resetLink)}
+      </p>
+
+      <p>
+        If you did not request this, you can safely ignore this email.
+      </p>
     </div>
   `;
 

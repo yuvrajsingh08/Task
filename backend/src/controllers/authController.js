@@ -164,7 +164,7 @@ const forgotPassword = async (req, res) => {
     }
 
     res.json({
-      message: "If an account exists, a password reset link has been sent.",
+      message: "A password reset link has been sent.",
     });
   } catch (error) {
     res.status(500).json({
