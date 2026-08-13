@@ -29,6 +29,14 @@ const buildTaskPayload = (body) => {
     payload.category = normalizeCategory(body.category);
   }
 
+  if (Object.prototype.hasOwnProperty.call(body, "tags")) {
+    payload.tags = Array.isArray(body.tags)
+      ? body.tags
+          .map((tag) => String(tag).trim())
+          .filter(Boolean)
+      : [];
+  }
+
   return payload;
 };
 
@@ -44,7 +52,7 @@ const validateTaskDates = (payload) => {
 
 const getTasks = async (req, res) => {
   try {
-    const { search, status, priority, category } = req.query;
+    const { search, status, priority, category, tag } = req.query;
     const query = { user: req.user._id };
 
     if (search) {
@@ -52,6 +60,7 @@ const getTasks = async (req, res) => {
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { category: { $regex: search, $options: "i" } },
+        { tags: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -67,6 +76,10 @@ const getTasks = async (req, res) => {
       query.category = normalizeCategory(category);
     }
 
+    if (tag && tag !== "All") {
+      query.tags = tag.trim();
+    }
+
     const page = req.query.page ? parseInt(req.query.page, 10) : null;
     const pageSizeParam = req.query.pageSize
       ? parseInt(req.query.pageSize, 10)
@@ -75,6 +88,7 @@ const getTasks = async (req, res) => {
     if (page) {
       const DEFAULT_PAGE_SIZE = 10;
       const MAX_PAGE_SIZE = 100;
+
       const pageSize =
         Number.isFinite(pageSizeParam) && pageSizeParam > 0
           ? Math.min(pageSizeParam, MAX_PAGE_SIZE)
@@ -102,11 +116,13 @@ const getTasks = async (req, res) => {
     }
 
     const tasks = await Task.find(query).sort({ createdAt: -1 });
+
     res.json(tasks);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to fetch tasks", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch tasks",
+      error: error.message,
+    });
   }
 };
 
@@ -119,11 +135,13 @@ const createTask = async (req, res) => {
       ...payload,
       user: req.user._id,
     });
+
     res.status(201).json(task);
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Failed to create task", error: error.message });
+    res.status(400).json({
+      message: "Failed to create task",
+      error: error.message,
+    });
   }
 };
 
@@ -133,7 +151,10 @@ const updateTask = async (req, res) => {
     validateTaskDates(payload);
 
     const task = await Task.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
+      {
+        _id: req.params.id,
+        user: req.user._id,
+      },
       payload,
       {
         new: true,
@@ -142,14 +163,17 @@ const updateTask = async (req, res) => {
     );
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        message: "Task not found",
+      });
     }
 
     res.json(task);
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Failed to update task", error: error.message });
+    res.status(400).json({
+      message: "Failed to update task",
+      error: error.message,
+    });
   }
 };
 
@@ -161,63 +185,97 @@ const deleteTask = async (req, res) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        message: "Task not found",
+      });
     }
 
-    res.json({ message: "Task deleted successfully" });
+    res.json({
+      message: "Task deleted successfully",
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to delete task", error: error.message });
+    res.status(500).json({
+      message: "Failed to delete task",
+      error: error.message,
+    });
   }
 };
 
 const toggleTaskStatus = async (req, res) => {
   try {
-    const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
+    const task = await Task.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    task.status = task.status === "Completed" ? "Pending" : "Completed";
+    const statusFlow = ["Todo", "In Progress", "Pending", "Completed"];
+    const currentIndex = statusFlow.indexOf(task.status);
+
+    task.status =
+      statusFlow[(currentIndex + 1) % statusFlow.length];
+
     await task.save();
 
     res.json(task);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to update task status", error: error.message });
+    res.status(500).json({
+      message: "Failed to update task status",
+      error: error.message,
+    });
   }
 };
 
 const getAiSummary = async (req, res) => {
   try {
-    const tasks = await Task.find({ user: req.user._id });
-    const total = tasks.length;
-    const completed = tasks.filter(
-      (task) => task.status === "Completed",
-    ).length;
-    const pending = total - completed;
-    const highPriorityPending = tasks.filter(
-      (task) => task.status === "Pending" && task.priority === "High",
+    const tasks = await Task.find({
+      user: req.user._id,
+    });
+
+   const total = tasks.length;
+
+  const completed = tasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+
+  const todo = tasks.filter(
+    (task) => task.status === "Todo"
+  ).length;
+
+  const inProgress = tasks.filter(
+    (task) => task.status === "In Progress"
+  ).length;
+
+  const pending = tasks.filter(
+    (task) => task.status === "Pending"
+  ).length;
+
+  const unfinished = todo + inProgress + pending;
+
+    const highPriorityUnfinished = tasks.filter(
+      (task) =>
+        task.status !== "Completed" &&
+        task.priority === "High",
     ).length;
 
     const suggestions = [];
 
-    if (pending === 0 && total > 0) {
+    if (unfinished === 0 && total > 0) {
       suggestions.push("Great work. All tasks are completed.");
     }
 
-    if (highPriorityPending > 0) {
+    if (highPriorityUnfinished > 0) {
       suggestions.push(
-        `Start with ${highPriorityPending} high priority pending task(s).`,
+        `Start with ${highPriorityUnfinished} high priority task(s).`,
       );
     }
 
     const overdueTasks = tasks.filter((task) => {
       return (
-        task.status === "Pending" &&
+        task.status !== "Completed" &&
         task.dueDate &&
         new Date(task.dueDate) < new Date()
       );
@@ -229,26 +287,27 @@ const getAiSummary = async (req, res) => {
       );
     }
 
-    if (pending > 5) {
+    if (unfinished > 5) {
       suggestions.push(
-        "Break pending work into smaller categories to keep the board easier to scan.",
+        "Break unfinished work into smaller categories to keep the board easier to scan.",
       );
     }
 
     if (suggestions.length === 0) {
       suggestions.push(
-        "Your task list looks balanced. Keep progressing through pending work.",
+        "Your task list looks balanced. Keep progressing through your tasks.",
       );
     }
 
     res.json({
-      summary: `You have ${total} task(s): ${completed} completed and ${pending} pending.`,
+      summary: `You have ${total} task(s): ${completed} completed, ${inProgress} in progress, and ${todo} to-do.`,
       suggestions,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to generate summary", error: error.message });
+    res.status(500).json({
+      message: "Failed to generate summary",
+      error: error.message,
+    });
   }
 };
 

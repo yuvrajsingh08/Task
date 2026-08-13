@@ -14,8 +14,8 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Pending", "Completed"],
-      default: "Pending"
+      enum: ["Todo", "Pending", "In Progress", "Completed"],
+      default: "Todo"
     },
     priority: {
       type: String,
@@ -26,6 +26,16 @@ const taskSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "General"
+    },
+    tags: {
+      type: [String],
+      default: [],
+      set: (tags) =>
+        [...new Set(
+          tags
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+        )]
     },
     dueDate: {
       type: Date,
