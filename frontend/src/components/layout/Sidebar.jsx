@@ -13,18 +13,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { categoryToSlug, getCategoryColor } from "../../constants/categories";
 import { useTasks } from "../../context/TaskContext";
 import ProfileCard from "./ProfileCard";
 
-const CATEGORIES = [
-  { name: "Work", color: "bg-violet-500" },
-  { name: "Personal", color: "bg-blue-500" },
-  { name: "Development", color: "bg-cyan-500" },
-  { name: "Study", color: "bg-orange-500" },
-];
-
 function Sidebar() {
-  const { aiSummary } = useTasks();
+  const { aiSummary, categories } = useTasks();
   const [categoriesOpen, setCategoriesOpen] = useState(true);
 
   const navigation = [
@@ -92,8 +86,8 @@ function Sidebar() {
   };
 
   return (
-    <aside className="w-full border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:fixed lg:left-[max(0px,calc((100vw-80rem)/2))] lg:top-0 lg:z-30 lg:h-screen lg:w-72 lg:overflow-y-auto lg:border-b-0 lg:border-r xl:w-80">
-      <div className="p-3 sm:p-4 lg:p-5">
+    <aside className="flex w-full flex-col border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:fixed lg:left-[max(0px,calc((100vw-80rem)/2))] lg:top-0 lg:z-30 lg:h-screen lg:w-72 lg:overflow-hidden lg:border-b-0 lg:border-r xl:w-80">
+      <div className="shrink-0 p-3 sm:p-4 lg:p-5 lg:pb-3">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 text-white shadow-lg shadow-orange-200/50 dark:shadow-orange-950/30">
             <ClipboardList size={23} />
@@ -109,8 +103,10 @@ function Sidebar() {
             </p>
           </div>
         </div>
+      </div>
 
-        <nav className="mt-6">
+      <div className="order-3 min-h-0 flex-1 overflow-y-auto px-3 pb-3 sm:px-4 lg:order-2 lg:px-5 lg:pb-4">
+        <nav className="mt-2 lg:mt-1">
           <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
             Main
           </p>
@@ -147,25 +143,37 @@ function Sidebar() {
 
             {categoriesOpen && (
               <div className="ml-3 space-y-1 border-l border-slate-200 pl-3 dark:border-slate-700">
-                {CATEGORIES.map((category) => (
-                  <NavLink
-                    key={category.name}
-                    to={`/categories/${category.name.toLowerCase()}`}
-                    className={({ isActive }) =>
-                      `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                        isActive
-                          ? "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300"
-                          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-                      }`
-                    }
-                  >
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full ${category.color}`}
-                    />
+                {categories.length === 0 ? (
+                  <p className="px-3 py-2 text-xs text-slate-400">
+                    Categories appear when you add tasks.
+                  </p>
+                ) : (
+                  categories.map((category) => (
+                    <NavLink
+                      key={category.name}
+                      to={`/categories/${categoryToSlug(category.name)}`}
+                      className={({ isActive }) =>
+                        `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                          isActive
+                            ? "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300"
+                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                        }`
+                      }
+                    >
+                      <span
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColor(category.name)}`}
+                      />
 
-                    {category.name}
-                  </NavLink>
-                ))}
+                      <span className="min-w-0 flex-1 truncate">
+                        {category.name}
+                      </span>
+
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        {category.count}
+                      </span>
+                    </NavLink>
+                  ))
+                )}
               </div>
             )}
 
@@ -214,10 +222,10 @@ function Sidebar() {
             </p>
           </div>
         </section>
+      </div>
 
-        <div className="mt-4">
-          <ProfileCard />
-        </div>
+      <div className="order-2 shrink-0 border-t border-slate-100 p-3 sm:p-4 lg:order-3 lg:p-5 lg:pt-3 dark:border-slate-800">
+        <ProfileCard />
       </div>
     </aside>
   );

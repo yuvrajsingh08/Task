@@ -3,12 +3,12 @@ import {
   CalendarDays,
   CheckCircle2,
   Circle,
-  Clock3,
   Flag,
   Folder,
   Mail,
   PauseCircle,
   PlayCircle,
+  Star,
   Tag,
 } from "lucide-react";
 import { useTasks } from "../../context/TaskContext";
@@ -57,7 +57,7 @@ const STATUS_STYLES = {
 };
 
 function TaskCard({ onOpen, task }) {
-  const { deleteTask, startEdit, toggleTaskStatus } = useTasks();
+  const { deleteTask, startEdit, togglePin, toggleTaskStatus } = useTasks();
 
   const isCompleted = task.status === "Completed";
 
@@ -112,7 +112,9 @@ function TaskCard({ onOpen, task }) {
         ${
           isCompleted
             ? "border-emerald-200 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/20"
-            : "border-orange-100 bg-white dark:border-slate-800 dark:bg-slate-900"
+            : task.pinned
+              ? "border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-500/5"
+              : "border-orange-100 bg-white dark:border-slate-800 dark:bg-slate-900"
         }
       `}
       onClick={onOpen}
@@ -228,26 +230,45 @@ function TaskCard({ onOpen, task }) {
             )}
           </div>
 
-          <div
-            className="
-              shrink-0
-              opacity-60 transition-opacity
-              group-hover:opacity-100
-            "
-            onClick={(event) => event.stopPropagation()}
-          >
-            <TaskActionMenu
-              status={task.status}
-              onToggle={handleMenuClick(() =>
-                toggleTaskStatus(task._id)
-              )}
-              onEdit={handleMenuClick(() =>
-                startEdit(task)
-              )}
-              onDelete={handleMenuClick(() =>
-                deleteTask(task._id)
-              )}
-            />
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={handleMenuClick(() => togglePin(task._id))}
+              className={`rounded-lg p-1.5 transition ${
+                task.pinned
+                  ? "text-amber-500"
+                  : "text-slate-300 hover:text-amber-400 dark:text-slate-600"
+              }`}
+              aria-label={task.pinned ? "Unpin task" : "Pin task"}
+            >
+              <Star
+                size={16}
+                className={task.pinned ? "fill-current" : ""}
+              />
+            </button>
+
+            <div
+              className="
+                opacity-60 transition-opacity
+                group-hover:opacity-100
+              "
+              onClick={(event) => event.stopPropagation()}
+            >
+              <TaskActionMenu
+                pinned={task.pinned}
+                status={task.status}
+                onPin={handleMenuClick(() => togglePin(task._id))}
+                onToggle={handleMenuClick(() =>
+                  toggleTaskStatus(task._id)
+                )}
+                onEdit={handleMenuClick(() =>
+                  startEdit(task)
+                )}
+                onDelete={handleMenuClick(() =>
+                  deleteTask(task._id)
+                )}
+              />
+            </div>
           </div>
         </div>
 

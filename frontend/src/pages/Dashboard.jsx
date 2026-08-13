@@ -1,20 +1,15 @@
-import AppLayout from "../components/layout/AppLayout";
-import OverviewCards from "../components/layout/OverviewCards";
-import TaskFilters from "../components/tasks/TaskFilters";
-import TaskForm from "../components/tasks/TaskForm";
-import TaskList from "../components/tasks/TaskList";
-import Topbar from "../components/layout/Topbar";
+import TaskBoard from "../components/tasks/TaskBoard";
+import { useViewFilters } from "../hooks/useViewFilters";
 
 function Dashboard() {
+  useViewFilters();
 
   return (
-    <AppLayout>
-      <Topbar />
-      <OverviewCards />
-      <TaskForm />
-      <TaskFilters />
-      <TaskList />
-    </AppLayout>
+    <TaskBoard
+      eyebrow="Project board"
+      title="Project Tasks"
+      showOverview
+    />
   );
 }
 

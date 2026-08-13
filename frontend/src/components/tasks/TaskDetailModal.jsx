@@ -7,6 +7,7 @@ import {
   Flag,
   Folder,
   Mail,
+  Star,
   X,
 } from "lucide-react";
 import SelectField from "../ui/SelectField";
@@ -32,7 +33,7 @@ function InfoChip({ icon, label, tone }) {
 }
 
 function TaskDetailModal({ onClose, task }) {
-  const { tasks, updateTaskField } = useTasks();
+  const { tasks, togglePin, updateTaskField } = useTasks();
 
   if (!task) {
     return null;
@@ -86,9 +87,26 @@ function TaskDetailModal({ onClose, task }) {
                 {activeTask.title}
               </Dialog.Title>
             </div>
-            <Dialog.Close className="shrink-0 rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
-              <X size={18} />
-            </Dialog.Close>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => togglePin(activeTask._id)}
+                className={`rounded-lg border p-2 transition ${
+                  activeTask.pinned
+                    ? "border-amber-200 bg-amber-50 text-amber-500 dark:border-amber-500/30 dark:bg-amber-500/10"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+                aria-label={activeTask.pinned ? "Unpin task" : "Pin task"}
+              >
+                <Star
+                  size={18}
+                  className={activeTask.pinned ? "fill-current" : ""}
+                />
+              </button>
+              <Dialog.Close className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                <X size={18} />
+              </Dialog.Close>
+            </div>
           </div>
 
           {/* body */}

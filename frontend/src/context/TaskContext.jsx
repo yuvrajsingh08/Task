@@ -27,6 +27,12 @@ export function TaskProvider({ children }) {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [dueDateFilter, setDueDateFilter] = useState("");
+  const [dueFrom, setDueFrom] = useState("");
+  const [dueTo, setDueTo] = useState("");
+  const [excludeCompleted, setExcludeCompleted] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [aiSummary, setAiSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -126,6 +132,15 @@ export function TaskProvider({ children }) {
     setLoading(true);
 
     try {
+      const dueDateFrom =
+        dueFrom ||
+        (dueDateFilter ? toUtcISOStringForDate(dueDateFilter) : "");
+      const dueDateTo =
+        dueTo ||
+        (dueDateFilter
+          ? new Date(`${dueDateFilter}T23:59:59.999`).toISOString()
+          : "");
+
       const response = await api.get("/tasks", {
         params: {
           search,
@@ -134,6 +149,11 @@ export function TaskProvider({ children }) {
           category: categoryFilter,
           page,
           pageSize,
+          ...(dueDateFrom ? { dueFrom: dueDateFrom } : {}),
+          ...(dueDateTo ? { dueTo: dueDateTo } : {}),
+          ...(excludeCompleted ? { excludeCompleted: true } : {}),
+          ...(pinnedOnly ? { pinned: true } : {}),
+          sortBy,
         },
       });
 
@@ -149,14 +169,7 @@ export function TaskProvider({ children }) {
         setTotalPages(response.data.meta?.totalPages || 1);
       }
 
-      const filteredTasks = dueDateFilter
-        ? fetchedTasks.filter(
-            (task) =>
-              formatLocalDate(task.dueDate) === dueDateFilter,
-          )
-        : fetchedTasks;
-
-      setTasks(filteredTasks);
+      setTasks(fetchedTasks);
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -181,6 +194,15 @@ export function TaskProvider({ children }) {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/tasks/categories");
+      setCategories(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setCategories([]);
+    }
+  };
+
   useEffect(() => {
     setPage(1);
   }, [
@@ -189,6 +211,11 @@ export function TaskProvider({ children }) {
     priorityFilter,
     categoryFilter,
     dueDateFilter,
+    dueFrom,
+    dueTo,
+    excludeCompleted,
+    pinnedOnly,
+    sortBy,
   ]);
 
   useEffect(() => {
@@ -199,12 +226,18 @@ export function TaskProvider({ children }) {
     priorityFilter,
     categoryFilter,
     dueDateFilter,
+    dueFrom,
+    dueTo,
+    excludeCompleted,
+    pinnedOnly,
+    sortBy,
     page,
     pageSize,
   ]);
 
   useEffect(() => {
     fetchAiSummary();
+    fetchCategories();
   }, [tasks.length]);
 
   const updateForm = (event) => {
@@ -294,6 +327,7 @@ export function TaskProvider({ children }) {
 
       await fetchTasks();
       await fetchAiSummary();
+      await fetchCategories();
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -345,6 +379,7 @@ export function TaskProvider({ children }) {
 
       await fetchTasks();
       await fetchAiSummary();
+      await fetchCategories();
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -365,10 +400,26 @@ export function TaskProvider({ children }) {
 
       await fetchTasks();
       await fetchAiSummary();
+      await fetchCategories();
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         "Unable to update task status";
+
+      setMessage(errorMessage);
+      showToast(errorMessage, "error");
+    }
+  };
+
+  const togglePin = async (id) => {
+    try {
+      await api.patch(`/tasks/${id}/pin`);
+      await fetchTasks();
+      await fetchCategories();
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Unable to update pin";
 
       setMessage(errorMessage);
       showToast(errorMessage, "error");
@@ -387,6 +438,7 @@ export function TaskProvider({ children }) {
 
       await fetchTasks();
       await fetchAiSummary();
+      await fetchCategories();
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -412,6 +464,12 @@ export function TaskProvider({ children }) {
     priorityFilter,
     categoryFilter,
     dueDateFilter,
+    dueFrom,
+    dueTo,
+    excludeCompleted,
+    sortBy,
+    pinnedOnly,
+    categories,
 
     aiSummary,
     loading,
@@ -427,6 +485,11 @@ export function TaskProvider({ children }) {
     setPage,
     setPageSize,
     setDueDateFilter,
+    setDueFrom,
+    setDueTo,
+    setExcludeCompleted,
+    setSortBy,
+    setPinnedOnly,
 
     setFormValue,
     updateForm,
@@ -437,11 +500,13 @@ export function TaskProvider({ children }) {
     closeTaskModal,
     deleteTask,
     toggleTaskStatus,
+    togglePin,
     updateTaskField,
     resetForm,
 
     fetchTasks,
     fetchAiSummary,
+    fetchCategories,
   };
 
   return (

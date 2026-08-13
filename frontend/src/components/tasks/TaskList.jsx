@@ -5,7 +5,7 @@ import TaskCard from "./TaskCard";
 import TaskDetailModal from "./TaskDetailModal";
 import { useTasks } from "../../context/TaskContext";
 
-function TaskList() {
+function TaskList({ emptyText = "No tasks found." }) {
   const {
     loading,
     tasks,
@@ -30,7 +30,7 @@ function TaskList() {
   if (tasks.length === 0) {
     return (
       <div className="min-h-[18rem]">
-        <EmptyState text="No tasks found." />
+        <EmptyState text={emptyText} />
       </div>
     );
   }
