@@ -26,7 +26,7 @@ function Chip({ active, children, onClick }) {
       className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-2 py-1 text-[11px] font-medium transition sm:gap-1.5 sm:px-2.5 sm:py-1.5 sm:text-xs ${
         active
           ? "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-600/40 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/15"
-          : " bg-orange-50 border-orange-200 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
+          : " bg-orange-50 border-orange-200 dark:border-transparent text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
       }`}
     >
       {children}
