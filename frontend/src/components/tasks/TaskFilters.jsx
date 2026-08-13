@@ -7,7 +7,9 @@ import ScrollRow from "../ui/ScrollRow";
 import SelectField from "../ui/SelectField";
 
 const STATUS_OPTIONS = ["All", "Todo", "Pending", "In Progress", "Completed"];
+
 const PRIORITY_OPTIONS = ["All", "Low", "Medium", "High"];
+
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
@@ -21,10 +23,10 @@ function Chip({ active, children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold whitespace-nowrap transition ${
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-2 py-1 text-[11px] font-medium transition sm:gap-1.5 sm:px-2.5 sm:py-1.5 sm:text-xs ${
         active
-          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          ? "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-600/40 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/15"
+          : " bg-orange-50 border-orange-200 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
       }`}
     >
       {children}
@@ -32,7 +34,11 @@ function Chip({ active, children, onClick }) {
   );
 }
 
-function TaskFilters({ hideStatus = false, hideCategory = false }) {
+function TaskFilters({
+  hideStatus = false,
+  hideCategory = false,
+  filteredTasks = null,
+}) {
   const {
     categories,
     categoryFilter,
@@ -47,18 +53,34 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
     setStatusFilter,
     sortBy,
     statusFilter,
+    stats,
   } = useTasks();
 
   const activeSort =
     SORT_OPTIONS.find((option) => option.value === sortBy) || SORT_OPTIONS[0];
+
   const allCount = categories.reduce((sum, item) => sum + item.count, 0);
+
   const hasExtraFilters =
     pinnedOnly ||
     priorityFilter !== "All" ||
     (!hideStatus && statusFilter !== "All");
 
+  const currentTotal = filteredTasks ? filteredTasks.length : stats.total;
+
+  const currentCompleted = filteredTasks
+    ? filteredTasks.filter((task) => {
+        const status = String(task.status || "").toLowerCase();
+        return status === "completed" || status === "done";
+      }).length
+    : stats.completed;
+
+  const completionPercentage = currentTotal
+    ? Math.round((currentCompleted / currentTotal) * 100)
+    : 0;
+
   return (
-    <div className="w-full space-y-3 py-3">
+    <div className="w-full shrink-0 space-y-1.5 py-1 sm:space-y-2 sm:py-1 my-2">
       {!hideCategory && (
         <ScrollRow>
           <Chip
@@ -66,7 +88,7 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
             onClick={() => setCategoryFilter("All")}
           >
             All
-            <span className="text-xs opacity-70">{allCount}</span>
+            <span className="opacity-60">{allCount}</span>
           </Chip>
 
           {categories.map((category) => (
@@ -79,11 +101,9 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
                 )
               }
             >
-              <span
-                className={`h-2 w-2 rounded-full ${getCategoryColor(category.name)}`}
-              />
+              <span className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${getCategoryColor(category.name)}`} />
               {category.name}
-              <span className="text-xs opacity-70">{category.count}</span>
+              <span className="opacity-60">{category.count}</span>
             </Chip>
           ))}
 
@@ -91,10 +111,7 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
             active={pinnedOnly}
             onClick={() => setPinnedOnly(!pinnedOnly)}
           >
-            <Star
-              size={13}
-              className={pinnedOnly ? "fill-current" : ""}
-            />
+            <Star size={12} className={pinnedOnly ? "fill-current" : ""} />
             Pinned
           </Chip>
         </ScrollRow>
@@ -106,89 +123,105 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
             active={pinnedOnly}
             onClick={() => setPinnedOnly(!pinnedOnly)}
           >
-            <Star
-              size={13}
-              className={pinnedOnly ? "fill-current" : ""}
-            />
+            <Star size={12} className={pinnedOnly ? "fill-current" : ""} />
             Pinned
           </Chip>
         </ScrollRow>
       )}
 
-      <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <Search size={16} className="shrink-0 text-slate-400" />
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+        {/* Search */}
+        <div className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 text-slate-500 shadow-sm transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:focus-within:border-orange-500/50 dark:focus-within:ring-orange-500/10 sm:h-9 sm:w-[280px] sm:flex-none sm:gap-2 sm:px-3">
+          <Search size={14} className="shrink-0 sm:h-[15px] sm:w-[15px]" />
 
           <input
             type="text"
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search tasks"
+            className="min-w-0 flex-1 bg-transparent text-[11px] text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
           />
 
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="shrink-0 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="shrink-0 rounded-full p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               aria-label="Clear search"
             >
-              <X size={15} />
+              <X size={12} className="sm:h-[13px] sm:w-[13px]" />
             </button>
           )}
         </div>
 
+        {/* Sort */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            aria-label="Sort tasks"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 sm:h-9 sm:w-9"
+            aria-label={`Sort: ${activeSort.label}`}
+            title={`Sort: ${activeSort.label}`}
           >
-            <ArrowUpDown size={16} />
-            <span className="hidden sm:inline">{activeSort.label}</span>
+            <ArrowUpDown size={14} className="sm:h-[15px] sm:w-[15px]" />
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Portal>
             <DropdownMenu.Content
-              align="end"
+              align="start"
               sideOffset={8}
-              className="z-50 min-w-[180px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+              className="z-50 min-w-[170px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
             >
               {SORT_OPTIONS.map((option) => (
                 <DropdownMenu.Item
                   key={option.value}
                   onSelect={() => setSortBy(option.value)}
-                  className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-xs text-slate-700 outline-none hover:bg-orange-50 hover:text-orange-700 dark:text-slate-200 dark:hover:bg-orange-500/10 dark:hover:text-orange-300 sm:px-3 sm:text-sm"
                 >
                   {option.label}
-                  {sortBy === option.value && <Check size={15} />}
+
+                  {sortBy === option.value && (
+                    <Check size={14} className="text-orange-500" />
+                  )}
                 </DropdownMenu.Item>
               ))}
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
 
+        {/* Filter */}
         <Popover.Root>
           <Popover.Trigger
-            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-sm transition ${
+            className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition sm:h-9 sm:w-9 ${
               hasExtraFilters
-                ? "border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                ? "border-orange-300 bg-orange-50 text-orange-600 hover:bg-orange-100 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/15"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             }`}
-            aria-label="More filters"
+            aria-label="Filters"
+            title="Filters"
           >
-            <Filter size={16} />
+            <Filter size={14} className="sm:h-[15px] sm:w-[15px]" />
+
+            {hasExtraFilters && (
+              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-orange-500" />
+            )}
           </Popover.Trigger>
 
           <Popover.Portal>
             <Popover.Content
-              align="end"
+              align="start"
               sideOffset={8}
               className="z-50 w-[min(92vw,260px)] rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
             >
-              <p className="mb-3 text-xs font-black uppercase tracking-wide text-slate-400">
-                Filters
-              </p>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 sm:text-xs">
+                  Filters
+                </p>
+
+                {hasExtraFilters && (
+                  <span className="rounded-md bg-orange-50 px-2 py-1 text-[9px] font-semibold text-orange-600 dark:bg-orange-500/10 dark:text-orange-300 sm:text-[10px]">
+                    Active
+                  </span>
+                )}
+              </div>
 
               {!hideStatus && (
                 <div className="mb-3">
@@ -210,11 +243,12 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
                 />
               </div>
 
-              <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200 sm:py-2.5 sm:text-sm">
                 Pinned only
+
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-orange-400"
+                  className="h-3.5 w-3.5 accent-orange-500 sm:h-4 sm:w-4"
                   checked={pinnedOnly}
                   onChange={(event) => setPinnedOnly(event.target.checked)}
                 />
@@ -222,6 +256,22 @@ function TaskFilters({ hideStatus = false, hideCategory = false }) {
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
+
+        {/* Completion */}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <div
+            className="relative flex h-5 w-5 items-center justify-center rounded-full sm:h-6 sm:w-6"
+            style={{
+              background: `conic-gradient(rgb(249 115 22) ${completionPercentage}%, rgb(226 232 240) 0)`,
+            }}
+          >
+            <div className="h-3.5 w-3.5 rounded-full bg-white dark:bg-slate-900 sm:h-4 sm:w-4" />
+          </div>
+
+          <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 sm:text-xs">
+            {currentCompleted}/{currentTotal}
+          </span>
+        </div>
       </div>
     </div>
   );

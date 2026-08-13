@@ -1,7 +1,7 @@
 import OverviewCards from "../layout/OverviewCards";
 import TaskFilters from "../tasks/TaskFilters";
 import TaskForm from "../tasks/TaskForm";
-import TaskList from "../tasks/TaskList";
+import { TaskListContent, TaskListPagination } from "../tasks/TaskList";
 import Topbar from "../layout/Topbar";
 
 function TaskBoard({
@@ -15,21 +15,28 @@ function TaskBoard({
   showAddTask = true,
 }) {
   return (
-    <>
-      <Topbar
-        eyebrow={eyebrow}
-        title={title}
-        subtitle={subtitle}
-        showAddTask={showAddTask}
-      />
-      {showOverview && <OverviewCards />}
-      <TaskForm />
-      <TaskFilters
-        hideStatus={hideStatusFilter}
-        hideCategory={hideCategoryFilter}
-      />
-      <TaskList emptyText={emptyText} />
-    </>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0">
+        <Topbar
+          eyebrow={eyebrow}
+          title={title}
+          subtitle={subtitle}
+          showAddTask={showAddTask}
+        />
+        {showOverview && <OverviewCards />}
+        <TaskForm />
+        <TaskFilters
+          hideStatus={hideStatusFilter}
+          hideCategory={hideCategoryFilter}
+        />
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <TaskListContent emptyText={emptyText} />
+      </div>
+
+      <TaskListPagination />
+    </div>
   );
 }
 

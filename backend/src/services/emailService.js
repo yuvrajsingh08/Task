@@ -61,7 +61,7 @@ const sendTaskReminderEmail = async ({ task, user }) => {
     };
   }
 
-  const appName = process.env.APP_NAME || "TaskFlow";
+  const appName = process.env.APP_NAME || "Stack";
 
   const safeTitle = escapeHtml(task.title);
   const safeDescription = escapeHtml(
@@ -129,7 +129,7 @@ const sendPasswordResetEmail = async ({ to, resetLink }) => {
     };
   }
 
-  const appName = process.env.APP_NAME || "TaskFlow";
+  const appName = process.env.APP_NAME || "Stack";
 
   const textBody = [
     "Hello,",

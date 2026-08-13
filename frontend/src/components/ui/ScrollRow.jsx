@@ -55,7 +55,7 @@ function ScrollRow({ children }) {
 
       <div
         ref={scrollerRef}
-        className="flex gap-2 overflow-x-auto pb-1"
+        className="flex gap-1.5 overflow-x-auto pb-0.5"
       >
         {children}
       </div>

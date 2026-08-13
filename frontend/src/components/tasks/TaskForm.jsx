@@ -45,7 +45,7 @@ function TaskForm() {
       onOpenChange={(open) => !open && closeTaskModal()}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm backdrop-blur-sm" />
 
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[min(94vw,640px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-orange-100 bg-[#fffaf7] p-4 shadow-2xl shadow-orange-200/60 outline-none dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 sm:p-5">
           <form onSubmit={handleSubmit}>
