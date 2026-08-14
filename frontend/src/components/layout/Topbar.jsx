@@ -32,7 +32,7 @@ function Topbar({
         <button
           type="button"
           onClick={openTaskModal}
-          className="flex h-8 items-center justify-center gap-1 rounded-lg bg-[#ffd8c7] px-2 text-xs font-semibold text-slate-900 transition hover:bg-[#ffc8b0] dark:bg-orange-200 dark:hover:bg-orange-100 pr-3"
+          className="flex h-8 items-center justify-center gap-1 rounded-lg bg-[#ffd8c7] px-2 text-xs font-semibold text-slate-900 transition hover:bg-[#ffc8b0] dark:bg-orange-200 dark:hover:bg-orange-100 sm:pr-3"
           title="Add Task"
         >
           <Plus size={15} strokeWidth={2} />

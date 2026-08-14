@@ -108,20 +108,20 @@ function Sidebar({ isOpen = false, onClose = () => {} }) {
             Stack
           </h1>
 
-          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="truncate text-xs  sm:flex hidden font-medium text-slate-500 dark:text-slate-400">
             Organize your work
           </p>
         </div>
       </div>
 
-        <button
-          type="button"
-          aria-label="Close menu"
-          onClick={onClose}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 lg:hidden dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-        >
-          <X size={18} />
-        </button>
+         <button
+    type="button"
+    aria-label="Close menu"
+    onClick={onClose}
+    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden"
+  >
+    <X size={18} strokeWidth={2} />
+  </button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3 sm:px-4 lg:px-5 lg:pb-4">

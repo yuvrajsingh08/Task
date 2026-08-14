@@ -209,7 +209,7 @@ function TaskFilters({
             <Popover.Content
               align="start"
               sideOffset={8}
-              className="z-50 w-[min(92vw,260px)] rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+              className="z-50 w-[min(70vw,260px)] rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
             >
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 sm:text-xs">
