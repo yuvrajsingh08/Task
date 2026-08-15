@@ -128,6 +128,10 @@ export function TaskProvider({ children }) {
       : date.toISOString();
   };
 
+  const calculateTotalPages = (total) => {
+    return Math.max(1, Math.ceil(total / pageSize));
+  };
+
   const fetchTasks = async () => {
     setLoading(true);
 
@@ -135,6 +139,7 @@ export function TaskProvider({ children }) {
       const dueDateFrom =
         dueFrom ||
         (dueDateFilter ? toUtcISOStringForDate(dueDateFilter) : "");
+
       const dueDateTo =
         dueTo ||
         (dueDateFilter
@@ -261,6 +266,7 @@ export function TaskProvider({ children }) {
       ...emptyTaskForm,
       tags: [],
     });
+
     setEditingId(null);
   };
 
@@ -309,13 +315,75 @@ export function TaskProvider({ children }) {
 
     try {
       if (editingId) {
-        await api.put(`/tasks/${editingId}`, payload);
+        const previousTask = tasks.find(
+          (task) => task._id === editingId,
+        );
 
-        const successMessage = "Task updated successfully";
-        setMessage(successMessage);
-        showToast(successMessage, "success");
+        const optimisticTask = {
+          ...previousTask,
+          ...payload,
+          _id: editingId,
+        };
+
+        setTasks((currentTasks) =>
+          currentTasks.map((task) =>
+            task._id === editingId
+              ? optimisticTask
+              : task,
+          ),
+        );
+
+        try {
+          const response = await api.put(
+            `/tasks/${editingId}`,
+            payload,
+          );
+
+          const updatedTask =
+            response.data?.task ||
+            response.data;
+
+          if (updatedTask && updatedTask._id) {
+            setTasks((currentTasks) =>
+              currentTasks.map((task) =>
+                task._id === editingId
+                  ? updatedTask
+                  : task,
+              ),
+            );
+          }
+
+          const successMessage = "Task updated successfully";
+          setMessage(successMessage);
+          showToast(successMessage, "success");
+        } catch (error) {
+          setTasks((currentTasks) =>
+            currentTasks.map((task) =>
+              task._id === editingId
+                ? previousTask
+                : task,
+            ),
+          );
+
+          throw error;
+        }
       } else {
-        await api.post("/tasks", payload);
+        const response = await api.post("/tasks", payload);
+
+        const createdTask =
+          response.data?.task ||
+          response.data;
+
+        if (createdTask && createdTask._id) {
+          setTotalTasks((current) => current + 1);
+
+          if (page === 1) {
+            setTasks((currentTasks) => [
+              createdTask,
+              ...currentTasks,
+            ]);
+          }
+        }
 
         const successMessage = "Task added successfully";
         setMessage(successMessage);
@@ -325,7 +393,6 @@ export function TaskProvider({ children }) {
       resetForm();
       setIsTaskModalOpen(false);
 
-      await fetchTasks();
       await fetchAiSummary();
       await fetchCategories();
     } catch (error) {
@@ -370,6 +437,35 @@ export function TaskProvider({ children }) {
       return;
     }
 
+    const deletedTask = tasks.find(
+      (task) => task._id === id,
+    );
+
+    if (!deletedTask) {
+      return;
+    }
+
+    const previousTasks = tasks;
+
+    // Optimistically remove the task from the UI.
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task._id !== id),
+    );
+
+    setTotalTasks((currentTotal) => {
+      const newTotal = Math.max(0, currentTotal - 1);
+
+      const newTotalPages = calculateTotalPages(newTotal);
+
+      setTotalPages(newTotalPages);
+
+      if (page > newTotalPages) {
+        setPage(newTotalPages);
+      }
+
+      return newTotal;
+    });
+
     try {
       await api.delete(`/tasks/${id}`);
 
@@ -377,10 +473,21 @@ export function TaskProvider({ children }) {
       setMessage(successMessage);
       showToast(successMessage, "success");
 
-      await fetchTasks();
       await fetchAiSummary();
       await fetchCategories();
     } catch (error) {
+      // Rollback the optimistic delete.
+      setTasks(previousTasks);
+
+      setTotalTasks((currentTotal) => currentTotal + 1);
+
+      setTotalPages((currentTotalPages) =>
+        Math.max(
+          currentTotalPages,
+          calculateTotalPages(totalTasks),
+        ),
+      );
+
       const errorMessage =
         error.response?.data?.message ||
         "Unable to delete task";
@@ -391,17 +498,62 @@ export function TaskProvider({ children }) {
   };
 
   const toggleTaskStatus = async (id) => {
+    const previousTasks = tasks;
+
+    const currentTask = tasks.find(
+      (task) => task._id === id,
+    );
+
+    if (!currentTask) {
+      return;
+    }
+
+    const nextStatus =
+      currentTask.status === "Completed"
+        ? "Todo"
+        : "Completed";
+
+    // Optimistically update the status.
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task._id === id
+          ? {
+              ...task,
+              status: nextStatus,
+            }
+          : task,
+      ),
+    );
+
     try {
-      await api.patch(`/tasks/${id}/toggle`);
+      const response = await api.patch(
+        `/tasks/${id}/toggle`,
+      );
+
+      const updatedTask =
+        response.data?.task ||
+        response.data;
+
+      if (updatedTask && updatedTask._id) {
+        setTasks((currentTasks) =>
+          currentTasks.map((task) =>
+            task._id === id
+              ? updatedTask
+              : task,
+          ),
+        );
+      }
 
       const successMessage = "Task status updated";
       setMessage(successMessage);
       showToast(successMessage, "success");
 
-      await fetchTasks();
       await fetchAiSummary();
       await fetchCategories();
     } catch (error) {
+      // Rollback.
+      setTasks(previousTasks);
+
       const errorMessage =
         error.response?.data?.message ||
         "Unable to update task status";
@@ -412,11 +564,54 @@ export function TaskProvider({ children }) {
   };
 
   const togglePin = async (id) => {
+    const previousTasks = tasks;
+
+    const currentTask = tasks.find(
+      (task) => task._id === id,
+    );
+
+    if (!currentTask) {
+      return;
+    }
+
+    const nextPinned = !Boolean(currentTask.pinned);
+
+    // Optimistically update pin.
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task._id === id
+          ? {
+              ...task,
+              pinned: nextPinned,
+            }
+          : task,
+      ),
+    );
+
     try {
-      await api.patch(`/tasks/${id}/pin`);
-      await fetchTasks();
+      const response = await api.patch(
+        `/tasks/${id}/pin`,
+      );
+
+      const updatedTask =
+        response.data?.task ||
+        response.data;
+
+      if (updatedTask && updatedTask._id) {
+        setTasks((currentTasks) =>
+          currentTasks.map((task) =>
+            task._id === id
+              ? updatedTask
+              : task,
+          ),
+        );
+      }
+
       await fetchCategories();
     } catch (error) {
+      // Rollback.
+      setTasks(previousTasks);
+
       const errorMessage =
         error.response?.data?.message ||
         "Unable to update pin";
@@ -427,19 +622,60 @@ export function TaskProvider({ children }) {
   };
 
   const updateTaskField = async (id, field, value) => {
+    const previousTasks = tasks;
+
+    const currentTask = tasks.find(
+      (task) => task._id === id,
+    );
+
+    if (!currentTask) {
+      return;
+    }
+
+    // Optimistically update the field.
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task._id === id
+          ? {
+              ...task,
+              [field]: value,
+            }
+          : task,
+      ),
+    );
+
     try {
-      await api.put(`/tasks/${id}`, {
-        [field]: value,
-      });
+      const response = await api.put(
+        `/tasks/${id}`,
+        {
+          [field]: value,
+        },
+      );
+
+      const updatedTask =
+        response.data?.task ||
+        response.data;
+
+      if (updatedTask && updatedTask._id) {
+        setTasks((currentTasks) =>
+          currentTasks.map((task) =>
+            task._id === id
+              ? updatedTask
+              : task,
+          ),
+        );
+      }
 
       const successMessage = "Task updated successfully";
       setMessage(successMessage);
       showToast(successMessage, "success");
 
-      await fetchTasks();
       await fetchAiSummary();
       await fetchCategories();
     } catch (error) {
+      // Rollback.
+      setTasks(previousTasks);
+
       const errorMessage =
         error.response?.data?.message ||
         "Unable to update task";

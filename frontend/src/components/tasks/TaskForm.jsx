@@ -28,6 +28,28 @@ function TaskForm() {
     setTagsInput(event.target.value);
   };
 
+
+  function getTodayDate() {
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function getCurrentDateTime() {
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
   const handleSubmit = (event) => {
     const tags = tagsInput
       .split(",")
@@ -139,6 +161,7 @@ function TaskForm() {
               <DatePickerField
                 label="Due Date"
                 value={form.dueDate}
+                min={getTodayDate()}
                 onChange={(value) => setFormValue("dueDate", value)}
               />
 
@@ -153,6 +176,7 @@ function TaskForm() {
                   name="reminderAt"
                   type="datetime-local"
                   value={form.reminderAt}
+                  min={getCurrentDateTime()}
                   onChange={updateForm}
                   disabled={isSaving}
                 />
