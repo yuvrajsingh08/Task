@@ -1,14 +1,17 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   CheckCircle2,
-  Circle,
   MoreHorizontal,
   Pencil,
+  Repeat2,
   Star,
   Trash2,
 } from "lucide-react";
+import { getNextTaskStatus } from "../../constants/statuses";
 
 function TaskActionMenu({ onDelete, onEdit, onPin, onToggle, pinned, status }) {
+  const nextStatus = getNextTaskStatus(status);
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
@@ -24,12 +27,12 @@ function TaskActionMenu({ onDelete, onEdit, onPin, onToggle, pinned, status }) {
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
             onClick={onToggle}>
-            {status === "Completed" ? (
-              <Circle size={16} />
-            ) : (
+            {nextStatus === "Completed" ? (
               <CheckCircle2 size={16} />
+            ) : (
+              <Repeat2 size={16} />
             )}
-            {status === "Completed" ? "Mark Pending" : "Mark Completed"}
+            Move to {nextStatus}
           </DropdownMenu.Item>
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

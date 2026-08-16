@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import SelectField from "../ui/SelectField";
+import { TASK_STATUSES } from "../../constants/statuses";
 import { useTasks } from "../../context/TaskContext";
 
 const PRIORITY_DOT = {
@@ -57,6 +58,16 @@ function TaskDetailModal({ onClose, task }) {
         minute: "2-digit",
       })
     : "No reminder";
+
+  const updatedDate = activeTask.updatedAt
+  ? new Date(activeTask.updatedAt).toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+  : "Not available";
 
   return (
     <Dialog.Root
@@ -166,7 +177,7 @@ function TaskDetailModal({ onClose, task }) {
                 onChange={(value) =>
                   updateTaskField(activeTask._id, "status", value)
                 }
-                options={["Pending", "Completed"]}
+                options={TASK_STATUSES}
               />
               <SelectField
                 label="Priority"
@@ -176,6 +187,9 @@ function TaskDetailModal({ onClose, task }) {
                 }
                 options={["Low", "Medium", "High"]}
               />
+            </div>
+            <div className="mt-5 border-t border-slate-100 pt-3 text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
+              Last updated {updatedDate}
             </div>
           </div>
         </Dialog.Content>

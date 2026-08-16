@@ -9,6 +9,7 @@ function Dashboard() {
       eyebrow="Project board"
       title="Project Tasks"
       showOverview
+      showTaskList={false}
     />
   );
 }

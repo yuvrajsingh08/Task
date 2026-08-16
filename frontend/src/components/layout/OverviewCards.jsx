@@ -4,10 +4,6 @@ import { useTasks } from "../../context/TaskContext";
 function OverviewCards() {
   const { stats } = useTasks();
 
-  const completion = stats.total
-    ? Math.round((stats.completed / stats.total) * 100)
-    : 0;
-
   const cards = [
     {
       label: "Total",
@@ -37,17 +33,10 @@ function OverviewCards() {
       tone: "from-rose-500 to-pink-500",
       surface: "bg-[#ffd8ea]",
     },
-    {
-      label: "Done %",
-      value: `${completion}%`,
-      icon: <CheckCircle2 size={15} />,
-      tone: "from-violet-500 to-fuchsia-500",
-      surface: "bg-[#eadcff]",
-    },
   ];
 
   return (
-    <section className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+    <section className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
       {cards.map((card) => (
         <article
           key={card.label}

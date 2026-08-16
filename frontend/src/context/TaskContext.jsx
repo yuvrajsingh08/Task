@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import api from "../api";
+import { getNextTaskStatus } from "../constants/statuses";
 import { useToast } from "./ToastContext";
 
 const TaskContext = createContext();
@@ -508,10 +509,7 @@ export function TaskProvider({ children }) {
       return;
     }
 
-    const nextStatus =
-      currentTask.status === "Completed"
-        ? "Todo"
-        : "Completed";
+    const nextStatus = getNextTaskStatus(currentTask.status);
 
     // Optimistically update the status.
     setTasks((currentTasks) =>

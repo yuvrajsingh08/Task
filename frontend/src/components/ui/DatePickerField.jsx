@@ -3,7 +3,10 @@ import { CalendarDays, X } from "lucide-react";
 
 function DatePickerField({ label, onChange, value, min }) {
   const formattedValue = value
-    ? new Date(`${value}T00:00:00`).toLocaleDateString()
+    ? (() => {
+        const [year, month, day] = value.split("-");
+        return `${day}/${month}/${year}`;
+      })()
     : "Pick date";
 
   return (

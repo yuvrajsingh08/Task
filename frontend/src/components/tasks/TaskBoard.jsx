@@ -13,6 +13,7 @@ function TaskBoard({
   hideCategoryFilter = false,
   emptyText,
   showAddTask = true,
+  showTaskList = true,
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -31,11 +32,15 @@ function TaskBoard({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <TaskListContent emptyText={emptyText} />
-      </div>
+      {showTaskList && (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <TaskListContent emptyText={emptyText} />
+          </div>
 
-      <TaskListPagination />
+          <TaskListPagination />
+        </>
+      )}
     </div>
   );
 }

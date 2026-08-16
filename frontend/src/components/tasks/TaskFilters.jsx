@@ -2,11 +2,10 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Popover from "@radix-ui/react-popover";
 import { ArrowUpDown, Check, Filter, Search, Star, X } from "lucide-react";
 import { getCategoryColor } from "../../constants/categories";
+import { STATUS_FILTER_OPTIONS } from "../../constants/statuses";
 import { useTasks } from "../../context/TaskContext";
 import ScrollRow from "../ui/ScrollRow";
 import SelectField from "../ui/SelectField";
-
-const STATUS_OPTIONS = ["All", "Todo", "Pending", "In Progress", "Completed"];
 
 const PRIORITY_OPTIONS = ["All", "Low", "Medium", "High"];
 
@@ -229,7 +228,7 @@ function TaskFilters({
                     label="Status"
                     value={statusFilter}
                     onChange={setStatusFilter}
-                    options={STATUS_OPTIONS}
+                    options={STATUS_FILTER_OPTIONS}
                   />
                 </div>
               )}

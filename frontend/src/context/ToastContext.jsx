@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 const ToastContext = createContext();
 
 export function ToastProvider({ children }) {
-  const showToast = (message, type = "info", duration = 3000) => {
+  const showToast = (message, type = "info", duration = 2000) => {
     const toastType =
       type === "error" ? "error" : type === "success" ? "success" : "info";
 

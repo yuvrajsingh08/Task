@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Bell, Mail, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { TASK_STATUSES } from "../../constants/statuses";
 import { useTasks } from "../../context/TaskContext";
 import DatePickerField from "../ui/DatePickerField";
 import SelectField from "../ui/SelectField";
@@ -129,7 +130,7 @@ function TaskForm() {
                 label="Status"
                 value={form.status}
                 onChange={(value) => setFormValue("status", value)}
-                options={["Todo", "Pending", "In Progress", "Completed"]}
+                options={TASK_STATUSES}
               />
 
               <SelectField
