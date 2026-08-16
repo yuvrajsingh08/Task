@@ -75,7 +75,7 @@ export function TaskListPagination() {
 }
 
 export function TaskListContent({ emptyText = "No tasks found." }) {
-  const { loading, tasks } = useTasks();
+  const { loading, visibleTasks } = useTasks();
   const [selectedTask, setSelectedTask] = useState(null);
 
   if (loading) {
@@ -86,7 +86,7 @@ export function TaskListContent({ emptyText = "No tasks found." }) {
     );
   }
 
-  if (tasks.length === 0) {
+  if (visibleTasks.length === 0) {
     return (
       <div className="flex min-h-[8rem] items-center justify-center">
         <EmptyState text={emptyText} />
@@ -97,7 +97,7 @@ export function TaskListContent({ emptyText = "No tasks found." }) {
   return (
     <>
       <div className="grid content-start gap-1.5 pb-1">
-        {tasks.map((task) => (
+        {visibleTasks.map((task) => (
           <TaskCard
             key={task._id}
             task={task}

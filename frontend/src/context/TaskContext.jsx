@@ -41,7 +41,7 @@ export function TaskProvider({ children }) {
   const [message, setMessage] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
+  const [, setTotalPages] = useState(1);
   const [totalTasks, setTotalTasks] = useState(0);
 
   const savingRef = useRef(false);
@@ -133,35 +133,166 @@ export function TaskProvider({ children }) {
     return Math.max(1, Math.ceil(total / pageSize));
   };
 
+  const getTaskTime = (task, field) => {
+    if (!task[field]) return 0;
+
+    const date = new Date(task[field]);
+
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  };
+
+  const isCompletedStatus = (status) => {
+    return ["completed", "done"].includes(
+      String(status || "").toLowerCase(),
+    );
+  };
+
+  const priorityRank = {
+    High: 3,
+    Medium: 2,
+    Low: 1,
+  };
+
+  const visibleTasks = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    const dueDateFrom =
+      dueFrom ||
+      (dueDateFilter ? toUtcISOStringForDate(dueDateFilter) : "");
+
+    const dueDateTo =
+      dueTo ||
+      (dueDateFilter
+        ? new Date(`${dueDateFilter}T23:59:59.999`).toISOString()
+        : "");
+
+    const dueFromTime = dueDateFrom
+      ? new Date(dueDateFrom).getTime()
+      : null;
+    const dueToTime = dueDateTo ? new Date(dueDateTo).getTime() : null;
+
+    const filtered = tasks.filter((task) => {
+      if (normalizedSearch) {
+        const searchableText = [
+          task.title,
+          task.description,
+          task.category,
+          ...(Array.isArray(task.tags) ? task.tags : []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!searchableText.includes(normalizedSearch)) {
+          return false;
+        }
+      }
+
+      if (
+        statusFilter !== "All" &&
+        task.status !== statusFilter
+      ) {
+        return false;
+      }
+
+      if (
+        priorityFilter !== "All" &&
+        task.priority !== priorityFilter
+      ) {
+        return false;
+      }
+
+      if (
+        categoryFilter !== "All" &&
+        task.category !== categoryFilter
+      ) {
+        return false;
+      }
+
+      if (excludeCompleted && isCompletedStatus(task.status)) {
+        return false;
+      }
+
+      if (pinnedOnly && !task.pinned) {
+        return false;
+      }
+
+      if (dueFromTime || dueToTime) {
+        const dueTime = getTaskTime(task, "dueDate");
+
+        if (!dueTime) {
+          return false;
+        }
+
+        if (dueFromTime && dueTime < dueFromTime) {
+          return false;
+        }
+
+        if (dueToTime && dueTime > dueToTime) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "oldest") {
+        return getTaskTime(a, "createdAt") - getTaskTime(b, "createdAt");
+      }
+
+      if (sortBy === "title") {
+        return String(a.title || "").localeCompare(
+          String(b.title || ""),
+        );
+      }
+
+      if (sortBy === "dueDate") {
+        return (
+          (getTaskTime(a, "dueDate") || Number.MAX_SAFE_INTEGER) -
+          (getTaskTime(b, "dueDate") || Number.MAX_SAFE_INTEGER)
+        );
+      }
+
+      if (sortBy === "priority") {
+        return (
+          (priorityRank[b.priority] || 0) -
+          (priorityRank[a.priority] || 0)
+        );
+      }
+
+      return getTaskTime(b, "createdAt") - getTaskTime(a, "createdAt");
+    });
+  }, [
+    tasks,
+    search,
+    statusFilter,
+    priorityFilter,
+    categoryFilter,
+    dueDateFilter,
+    dueFrom,
+    dueTo,
+    excludeCompleted,
+    pinnedOnly,
+    sortBy,
+  ]);
+
+  const visibleTotalTasks = visibleTasks.length;
+  const visibleTotalPages = Math.max(
+    1,
+    Math.ceil(visibleTotalTasks / pageSize),
+  );
+  const paginatedTasks = useMemo(() => {
+    const start = (page - 1) * pageSize;
+
+    return visibleTasks.slice(start, start + pageSize);
+  }, [visibleTasks, page, pageSize]);
+
   const fetchTasks = async () => {
     setLoading(true);
 
     try {
-      const dueDateFrom =
-        dueFrom ||
-        (dueDateFilter ? toUtcISOStringForDate(dueDateFilter) : "");
-
-      const dueDateTo =
-        dueTo ||
-        (dueDateFilter
-          ? new Date(`${dueDateFilter}T23:59:59.999`).toISOString()
-          : "");
-
-      const response = await api.get("/tasks", {
-        params: {
-          search,
-          status: statusFilter,
-          priority: priorityFilter,
-          category: categoryFilter,
-          page,
-          pageSize,
-          ...(dueDateFrom ? { dueFrom: dueDateFrom } : {}),
-          ...(dueDateTo ? { dueTo: dueDateTo } : {}),
-          ...(excludeCompleted ? { excludeCompleted: true } : {}),
-          ...(pinnedOnly ? { pinned: true } : {}),
-          sortBy,
-        },
-      });
+      const response = await api.get("/tasks");
 
       let fetchedTasks = [];
 
@@ -270,20 +401,13 @@ export function TaskProvider({ children }) {
 
   useEffect(() => {
     fetchTasks();
-  }, [
-    search,
-    statusFilter,
-    priorityFilter,
-    categoryFilter,
-    dueDateFilter,
-    dueFrom,
-    dueTo,
-    excludeCompleted,
-    pinnedOnly,
-    sortBy,
-    page,
-    pageSize,
-  ]);
+  }, []);
+
+  useEffect(() => {
+    if (page > visibleTotalPages) {
+      setPage(visibleTotalPages);
+    }
+  }, [page, visibleTotalPages]);
 
   useEffect(() => {
     fetchAiSummary();
@@ -421,12 +545,10 @@ export function TaskProvider({ children }) {
         if (createdTask && createdTask._id) {
           setTotalTasks((current) => current + 1);
 
-          if (page === 1) {
-            setTasks((currentTasks) => [
-              createdTask,
-              ...currentTasks,
-            ]);
-          }
+          setTasks((currentTasks) => [
+            createdTask,
+            ...currentTasks,
+          ]);
         }
 
         const successMessage = "Task added successfully";
@@ -725,10 +847,12 @@ export function TaskProvider({ children }) {
 
   const value = {
     tasks,
+    visibleTasks: paginatedTasks,
+    filteredTasks: visibleTasks,
     page,
     pageSize,
-    totalPages,
-    totalTasks,
+    totalPages: visibleTotalPages,
+    totalTasks: visibleTotalTasks,
 
     form,
     editingId,

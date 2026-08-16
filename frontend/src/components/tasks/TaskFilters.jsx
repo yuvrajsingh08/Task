@@ -52,7 +52,10 @@ function TaskFilters({
     sortBy,
     statusFilter,
     stats,
+    filteredTasks: contextFilteredTasks,
   } = useTasks();
+
+  const activeTasks = filteredTasks || contextFilteredTasks;
 
   const activeSort =
     SORT_OPTIONS.find((option) => option.value === sortBy) ||
@@ -68,12 +71,12 @@ function TaskFilters({
     priorityFilter !== "All" ||
     (!hideStatus && statusFilter !== "All");
 
-  const currentTotal = filteredTasks
-    ? filteredTasks.length
+  const currentTotal = activeTasks
+    ? activeTasks.length
     : stats.total;
 
-  const currentCompleted = filteredTasks
-    ? filteredTasks.filter((task) => {
+  const currentCompleted = activeTasks
+    ? activeTasks.filter((task) => {
         const status = String(task.status || "").toLowerCase();
         return status === "completed" || status === "done";
       }).length
