@@ -1,12 +1,12 @@
 const CATEGORY_COLORS = [
-  "bg-violet-500",
-  "bg-blue-500",
-  "bg-cyan-500",
   "bg-orange-500",
-  "bg-emerald-500",
-  "bg-pink-500",
   "bg-amber-500",
-  "bg-rose-500",
+  "bg-yellow-500",
+  "bg-orange-400",
+  "bg-amber-400",
+  "bg-orange-600",
+  "bg-yellow-600",
+  "bg-amber-600",
 ];
 
 export const getCategoryColor = (name = "") => {

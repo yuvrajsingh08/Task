@@ -92,6 +92,179 @@ const priorityRankStage = {
   },
 };
 
+const buildLocalAiSummary = (tasks) => {
+  const total = tasks.length;
+
+  const completed = tasks.filter(
+    (task) => task.status === "Completed",
+  ).length;
+
+  const todo = tasks.filter(
+    (task) => task.status === "Todo",
+  ).length;
+
+  const inProgress = tasks.filter(
+    (task) => task.status === "In Progress",
+  ).length;
+
+  const pending = tasks.filter(
+    (task) => task.status === "Pending",
+  ).length;
+
+  const unfinished = todo + inProgress + pending;
+
+  const highPriorityUnfinished = tasks.filter(
+    (task) =>
+      task.status !== "Completed" &&
+      task.priority === "High",
+  ).length;
+
+  const overdueTasks = tasks.filter((task) => {
+    return (
+      task.status !== "Completed" &&
+      task.dueDate &&
+      new Date(task.dueDate) < new Date()
+    );
+  });
+
+  const suggestions = [];
+
+  if (unfinished === 0 && total > 0) {
+    suggestions.push("Great work. All tasks are completed.");
+  }
+
+  if (highPriorityUnfinished > 0) {
+    suggestions.push(
+      `Start with ${highPriorityUnfinished} high priority task(s).`,
+    );
+  }
+
+  if (overdueTasks.length > 0) {
+    suggestions.push(
+      `Review ${overdueTasks.length} overdue task(s) before adding new work.`,
+    );
+  }
+
+  if (unfinished > 5) {
+    suggestions.push(
+      "Break unfinished work into smaller categories to keep the board easier to scan.",
+    );
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push(
+      "Your task list looks balanced. Keep progressing through your tasks.",
+    );
+  }
+
+  return {
+    summary: `You have ${total} task(s): ${completed} completed, ${inProgress} in progress, and ${todo} to-do.`,
+    suggestions,
+    source: "local",
+  };
+};
+
+const parseGeminiJson = (text = "") => {
+  const cleaned = text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+
+  if (start === -1 || end === -1) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(cleaned.slice(start, end + 1));
+  } catch (error) {
+    return null;
+  }
+};
+
+const getGeminiAiSummary = async (tasks, fallback) => {
+  const apiKey = process.env.GOOGLE_GENAI_API_KEY;
+
+  if (!apiKey || typeof fetch !== "function") {
+    return fallback;
+  }
+
+  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  const taskSnapshot = tasks.slice(0, 50).map((task) => ({
+    title: task.title,
+    status: task.status,
+    priority: task.priority,
+    category: task.category,
+    dueDate: task.dueDate,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+  }));
+
+  const prompt = `
+    You are helping a user understand their personal task list.
+    Return only valid JSON with this shape:
+    {"summary":"one short sentence","suggestions":["2 to 4 practical suggestions"]}
+
+    Avoid duration or time-spent metrics. Use priority, due dates, overdue tasks, and stale tasks.
+    Keep the wording concise and action-focused.
+
+    Local fallback summary:
+    ${JSON.stringify(fallback)}
+
+    Tasks:
+    ${JSON.stringify(taskSnapshot)}
+    `;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 240,
+          },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("");
+    const parsed = parseGeminiJson(text);
+
+    if (!parsed?.summary || !Array.isArray(parsed.suggestions)) {
+      return fallback;
+    }
+
+    return {
+      summary: parsed.summary,
+      suggestions: parsed.suggestions.slice(0, 4),
+      source: "gemini",
+    };
+  } catch (error) {
+    return fallback;
+  }
+};
+
 const getTasks = async (req, res) => {
   try {
     const {
@@ -218,7 +391,7 @@ const getTasks = async (req, res) => {
 const createTask = async (req, res) => {
   try {
     const payload = buildTaskPayload(req.body);
-    validateTaskDates(payload);
+    // validateTaskDates(payload);
 
     const task = await Task.create({
       ...payload,
@@ -237,7 +410,7 @@ const createTask = async (req, res) => {
 const updateTask = async (req, res) => {
   try {
     const payload = buildTaskPayload(req.body);
-    validateTaskDates(payload);
+    // validateTaskDates(payload);
 
     const task = await Task.findOneAndUpdate(
       {
@@ -374,74 +547,10 @@ const getAiSummary = async (req, res) => {
       user: req.user._id,
     });
 
-   const total = tasks.length;
-
-  const completed = tasks.filter(
-    (task) => task.status === "Completed"
-  ).length;
-
-  const todo = tasks.filter(
-    (task) => task.status === "Todo"
-  ).length;
-
-  const inProgress = tasks.filter(
-    (task) => task.status === "In Progress"
-  ).length;
-
-  const pending = tasks.filter(
-    (task) => task.status === "Pending"
-  ).length;
-
-  const unfinished = todo + inProgress + pending;
-
-    const highPriorityUnfinished = tasks.filter(
-      (task) =>
-        task.status !== "Completed" &&
-        task.priority === "High",
-    ).length;
-
-    const suggestions = [];
-
-    if (unfinished === 0 && total > 0) {
-      suggestions.push("Great work. All tasks are completed.");
-    }
-
-    if (highPriorityUnfinished > 0) {
-      suggestions.push(
-        `Start with ${highPriorityUnfinished} high priority task(s).`,
-      );
-    }
-
-    const overdueTasks = tasks.filter((task) => {
-      return (
-        task.status !== "Completed" &&
-        task.dueDate &&
-        new Date(task.dueDate) < new Date()
-      );
-    });
-
-    if (overdueTasks.length > 0) {
-      suggestions.push(
-        `Review ${overdueTasks.length} overdue task(s) before adding new work.`,
-      );
-    }
-
-    if (unfinished > 5) {
-      suggestions.push(
-        "Break unfinished work into smaller categories to keep the board easier to scan.",
-      );
-    }
-
-    if (suggestions.length === 0) {
-      suggestions.push(
-        "Your task list looks balanced. Keep progressing through your tasks.",
-      );
-    }
-
-    res.json({
-      summary: `You have ${total} task(s): ${completed} completed, ${inProgress} in progress, and ${todo} to-do.`,
-      suggestions,
-    });
+    const localSummary = buildLocalAiSummary(tasks);
+    const summary = await getGeminiAiSummary(tasks, localSummary);
+    console.log("summar of ai", summary)
+    res.json(summary);
   } catch (error) {
     res.status(500).json({
       message: "Failed to generate summary",

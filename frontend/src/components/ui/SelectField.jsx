@@ -11,7 +11,7 @@ function SelectField({ label, onChange, options, value }) {
       )}
       <Select.Root value={value} onValueChange={onChange}>
         <Select.Trigger
-          className="flex min-w-0 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-left text-sm font-medium text-slate-700 outline-none transition focus:border-pink-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          className="flex min-w-0 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-left text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           aria-label={label}>
           <Select.Value />
           <Select.Icon>
