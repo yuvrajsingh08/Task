@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Bell, Mail, Plus, X } from "lucide-react";
+import { Bell, Mail, Plus, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TASK_STATUSES } from "../../constants/statuses";
 import { useTasks } from "../../context/TaskContext";
@@ -11,6 +11,8 @@ function TaskForm() {
     closeTaskModal,
     editingId,
     form,
+    improveFormText,
+    improvingField,
     isSaving,
     isTaskModalOpen,
     resetForm,
@@ -96,20 +98,39 @@ function TaskForm() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="md:col-span-2">
-                <span className="mb-2 block text-sm font-semibold text-slate-600 dark:text-slate-300">
+              <div className="md:col-span-2">
+                <label
+                  className="mb-2 block text-sm font-semibold text-slate-600 dark:text-slate-300"
+                  htmlFor="task-title"
+                >
                   Title
-                </span>
+                </label>
 
-                <input
-                  className="w-full rounded-xl border border-orange-100 bg-white px-3.5 py-3 text-slate-900 outline-none ring-0 transition placeholder:text-slate-400 focus:border-orange-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                  name="title"
-                  value={form.title}
-                  onChange={updateForm}
-                  placeholder="Task title"
-                  disabled={isSaving}
-                />
-              </label>
+                <div className="relative">
+                  <input
+                    id="task-title"
+                    className="w-full rounded-xl border border-orange-100 bg-white px-3.5 py-3 pr-12 text-slate-900 outline-none ring-0 transition placeholder:text-slate-400 focus:border-orange-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    name="title"
+                    value={form.title}
+                    onChange={updateForm}
+                    placeholder="Task title"
+                    disabled={isSaving}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Improve title with AI"
+                    title="Improve title with AI"
+                    disabled={isSaving || Boolean(improvingField)}
+                    onClick={() => improveFormText("title")}
+                    className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-orange-50 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
+                  >
+                    <Sparkles
+                      size={16}
+                      className={improvingField === "title" ? "animate-pulse" : ""}
+                    />
+                  </button>
+                </div>
+              </div>
 
               <label>
                 <span className="mb-2 block text-sm font-semibold text-slate-600 dark:text-slate-300">
@@ -202,20 +223,41 @@ function TaskForm() {
               />
             </label>
 
-            <label className="mt-3 block">
-              <span className="mb-2 block text-sm font-semibold text-slate-600 dark:text-slate-300">
+            <div className="mt-3 block">
+              <label
+                className="mb-2 block text-sm font-semibold text-slate-600 dark:text-slate-300"
+                htmlFor="task-description"
+              >
                 Description
-              </span>
+              </label>
 
-              <textarea
-                className="min-h-28 w-full resize-y rounded-xl border border-orange-100 bg-white px-3.5 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                name="description"
-                value={form.description}
-                onChange={updateForm}
-                placeholder="Description"
-                disabled={isSaving}
-              />
-            </label>
+              <div className="relative">
+                <textarea
+                  id="task-description"
+                  className="min-h-28 w-full resize-y rounded-xl border border-orange-100 bg-white px-3.5 py-3 pr-12 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  name="description"
+                  value={form.description}
+                  onChange={updateForm}
+                  placeholder="Description"
+                  disabled={isSaving}
+                />
+                <button
+                  type="button"
+                  aria-label="Improve description with AI"
+                  title="Improve description with AI"
+                  disabled={isSaving || Boolean(improvingField)}
+                  onClick={() => improveFormText("description")}
+                  className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-orange-50 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
+                >
+                  <Sparkles
+                    size={16}
+                    className={
+                      improvingField === "description" ? "animate-pulse" : ""
+                    }
+                  />
+                </button>
+              </div>
+            </div>
 
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               {editingId && (

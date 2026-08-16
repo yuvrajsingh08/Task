@@ -7,7 +7,8 @@ const {
   toggleTaskStatus,
   togglePin,
   getCategories,
-  getAiSummary
+  getAiSummary,
+  improveTaskText,
 } = require("../controllers/taskController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -19,6 +20,7 @@ router.get("/", getTasks);
 router.post("/", createTask);
 router.get("/ai-summary", getAiSummary);
 router.get("/categories", getCategories);
+router.post("/improve-text", improveTaskText);
 router.put("/:id", updateTask);
 router.patch("/:id/toggle", toggleTaskStatus);
 router.patch("/:id/pin", togglePin);

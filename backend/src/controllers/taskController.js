@@ -165,33 +165,139 @@ const buildLocalAiSummary = (tasks) => {
 };
 
 const parseGeminiJson = (text = "") => {
+  if (!text || typeof text !== "string") {
+    return null;
+  }
+
   const cleaned = text
     .replace(/```json/gi, "")
     .replace(/```/g, "")
     .trim();
 
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Continue with JSON extraction below.
+  }
+
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
 
-  if (start === -1 || end === -1) {
+  if (start === -1 || end === -1 || start > end) {
     return null;
   }
 
   try {
     return JSON.parse(cleaned.slice(start, end + 1));
-  } catch (error) {
+  } catch {
     return null;
   }
 };
 
-const getGeminiAiSummary = async (tasks, fallback) => {
+const getGeminiModel = () => {
+    return process.env.GEMINI_MODEL || "gemini-3-flash-preview";
+};
+
+const requestGeminiJson = async ({
+  prompt,
+  responseSchema,
+  maxOutputTokens = 1024,
+}) => {
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
 
-  if (!apiKey || typeof fetch !== "function") {
-    return fallback;
+  if (!apiKey) {
+    throw new Error("GOOGLE_GENAI_API_KEY is not configured");
   }
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  if (typeof fetch !== "function") {
+    throw new Error("Fetch is not available in this environment");
+  }
+
+  const model = getGeminiModel();
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+
+        generationConfig: {
+          maxOutputTokens,
+          responseMimeType: "application/json",
+          responseSchema,
+          thinkingConfig: {
+            thinkingLevel: "minimal",
+          },
+        },
+      }),
+    }
+  );
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const apiMessage =
+      data?.error?.message ||
+      data?.message ||
+      response.statusText ||
+      "Gemini request failed";
+
+    console.error("Gemini API Error:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: data,
+    });
+
+    throw new Error(`Gemini ${response.status}: ${apiMessage}`);
+  }
+
+  const candidate = data?.candidates?.[0];
+
+  if (!candidate) {
+    console.error("Gemini returned no candidate:", data);
+
+    throw new Error("Gemini returned no response");
+  }
+
+  const text = candidate?.content?.parts
+    ?.map((part) => part?.text || "")
+    .join("")
+    .trim();
+
+  console.log("Gemini response:", text);
+
+  if (!text) {
+    console.error("Gemini returned an empty response:", data);
+
+    throw new Error("Gemini returned an empty response");
+  }
+
+  const parsed = parseGeminiJson(text);
+
+  if (!parsed) {
+    console.error("Gemini returned invalid JSON:", text);
+    console.error("Full Gemini response:", data);
+
+    throw new Error("Gemini returned an invalid JSON response");
+  }
+
+  return parsed;
+};
+
+const getGeminiAiSummary = async (tasks, fallback) => {
   const taskSnapshot = tasks.slice(0, 50).map((task) => ({
     title: task.title,
     status: task.status,
@@ -204,64 +310,157 @@ const getGeminiAiSummary = async (tasks, fallback) => {
 
   const prompt = `
     You are helping a user understand their personal task list.
-    Return only valid JSON with this shape:
-    {"summary":"one short sentence","suggestions":["2 to 4 practical suggestions"]}
 
-    Avoid duration or time-spent metrics. Use priority, due dates, overdue tasks, and stale tasks.
-    Keep the wording concise and action-focused.
+    Generate:
+    1. One short summary.
+    2. Two to four practical suggestions.
 
-    Local fallback summary:
-    ${JSON.stringify(fallback)}
+    Rules:
+    - Avoid duration or time-spent metrics.
+    - Focus on priority, due dates, overdue tasks, and stale tasks.
+    - Keep wording concise and action-focused.
+    - Do not invent information.
+    - Do not include markdown.
+    - Do not include code fences.
 
     Tasks:
     ${JSON.stringify(taskSnapshot)}
     `;
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 240,
-          },
-        }),
+  const responseSchema = {
+    type: "object",
+    properties: {
+      summary: {
+        type: "string",
+        description: "One short sentence summarizing the user's task list.",
       },
-    );
+      suggestions: {
+        type: "array",
+        description: "Two to four practical task-management suggestions.",
+        items: {
+          type: "string",
+        },
+        minItems: 2,
+        maxItems: 4,
+      },
+    },
+    required: ["summary", "suggestions"],
+  };
 
-    if (!response.ok) {
-      return fallback;
-    }
+  try {
+    const parsed = await requestGeminiJson({
+      prompt,
+      responseSchema,
+      maxOutputTokens: 1024,
+    });
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || "")
-      .join("");
-    const parsed = parseGeminiJson(text);
-
-    if (!parsed?.summary || !Array.isArray(parsed.suggestions)) {
+    if (
+      !parsed ||
+      typeof parsed.summary !== "string" ||
+      !Array.isArray(parsed.suggestions)
+    ) {
       return fallback;
     }
 
     return {
-      summary: parsed.summary,
-      suggestions: parsed.suggestions.slice(0, 4),
+      summary: parsed.summary.trim(),
+
+      suggestions: parsed.suggestions
+        .filter((suggestion) => typeof suggestion === "string")
+        .map((suggestion) => suggestion.trim())
+        .filter(Boolean)
+        .slice(0, 4),
+
       source: "gemini",
     };
   } catch (error) {
-    return fallback;
+    console.error("Gemini AI Summary Error:", error);
+
+    return {
+      ...fallback,
+      aiError: error.message,
+    };
+  }
+};
+
+const getGeminiTaskTextImprovement = async (input) => {
+  if (!input || !input.field) {
+    throw new Error("Invalid input for AI text improvement");
+  }
+
+  const field = String(input.field).trim();
+
+  const title = String(input.title || "").trim();
+
+  const description = String(input.description || "").trim();
+
+  const prompt = `
+Improve one task form field while preserving the user's original intent.
+
+Field to improve:
+${field}
+
+Current title:
+${title}
+
+Current description:
+${description}
+
+Rules:
+- Fix spelling mistakes and grammar.
+- Improve clarity and action focus.
+- Do not add facts that were not provided.
+- Do not add dates, labels, deadlines, or commitments that were not implied.
+- Do not change the meaning of the task.
+- If improving a title, make it concise and use title case.
+- For titles, use "&" when it makes the action clearer.
+- Example: "Update website UI and improve design" -> "Update & Improve Website UI"
+- If improving a description, use normal sentence case.
+- Do not add labels such as "Better title:".
+- Do not use markdown.
+- Return only the requested improved text inside the JSON response.
+`;
+
+  const responseSchema = {
+    type: "object",
+    properties: {
+      text: {
+        type: "string",
+        description: "The improved task field text.",
+      },
+    },
+    required: ["text"],
+  };
+
+  try {
+    const parsed = await requestGeminiJson({
+      prompt,
+      responseSchema,
+      maxOutputTokens: 1024,
+    });
+
+    if (!parsed || typeof parsed.text !== "string") {
+      throw new Error(
+        "AI text improvement returned an invalid response"
+      );
+    }
+
+    const improvedText = parsed.text.trim();
+
+    if (!improvedText) {
+      throw new Error("AI returned empty text");
+    }
+
+    return improvedText;
+  } catch (error) {
+    console.error(
+      "Gemini Task Text Improvement Error:",
+      error
+    );
+
+    throw new Error(
+      error.message || "AI text improvement failed"
+    );
   }
 };
 
@@ -549,11 +748,49 @@ const getAiSummary = async (req, res) => {
 
     const localSummary = buildLocalAiSummary(tasks);
     const summary = await getGeminiAiSummary(tasks, localSummary);
+    console.log("local -> ", localSummary)
     console.log("summar of ai", summary)
     res.json(summary);
   } catch (error) {
     res.status(500).json({
       message: "Failed to generate summary",
+      error: error.message,
+    });
+  }
+};
+
+const improveTaskText = async (req, res) => {
+  try {
+    const field = req.body.field;
+
+    if (!["title", "description"].includes(field)) {
+      return res.status(400).json({
+        message: "Field must be title or description",
+      });
+    }
+
+    const input = {
+      field,
+      title: String(req.body.title || "").trim(),
+      description: String(req.body.description || "").trim(),
+    };
+
+    if (!input.title && !input.description) {
+      return res.status(400).json({
+        message: "Add a title or description first",
+      });
+    }
+
+    const text = await getGeminiTaskTextImprovement(input);
+
+    res.json({
+      field,
+      text,
+      source: "gemini",
+    });
+  } catch (error) {
+    res.status(503).json({
+      message: error.message || "AI text improvement failed",
       error: error.message,
     });
   }
@@ -568,4 +805,5 @@ module.exports = {
   togglePin,
   getCategories,
   getAiSummary,
+  improveTaskText,
 };

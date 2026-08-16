@@ -38,6 +38,7 @@ export function TaskProvider({ children }) {
   const [aiSummary, setAiSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [improvingField, setImprovingField] = useState("");
   const [message, setMessage] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -206,6 +207,50 @@ export function TaskProvider({ children }) {
       setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       setCategories([]);
+    }
+  };
+
+  const improveFormText = async (field) => {
+    if (!["title", "description"].includes(field)) {
+      return;
+    }
+
+    if (!form.title.trim() && !form.description.trim()) {
+      const errorMessage = "Add a title or description first";
+      setMessage(errorMessage);
+      showToast(errorMessage, "error");
+      return;
+    }
+
+    setImprovingField(field);
+
+    try {
+      const response = await api.post("/tasks/improve-text", {
+        field,
+        title: form.title,
+        description: form.description,
+      });
+
+      const improvedText = response.data?.text;
+
+      if (!improvedText) {
+        throw new Error("Missing improved text");
+      }
+
+      setFormValue(field, improvedText);
+      showToast(
+        field === "title" ? "Title improved" : "Description improved",
+        "success",
+      );
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Unable to improve task text";
+
+      setMessage(errorMessage);
+      showToast(errorMessage, "error");
+    } finally {
+      setImprovingField("");
     }
   };
 
@@ -708,6 +753,7 @@ export function TaskProvider({ children }) {
     aiSummary,
     loading,
     isSaving,
+    improvingField,
     message,
     stats,
     isTaskModalOpen,
@@ -727,6 +773,7 @@ export function TaskProvider({ children }) {
 
     setFormValue,
     updateForm,
+    improveFormText,
 
     saveTask,
     startEdit,
