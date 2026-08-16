@@ -5,7 +5,6 @@ import {
   Circle,
   Flag,
   Folder,
-  Mail,
   PauseCircle,
   PlayCircle,
   Star,
@@ -257,14 +256,6 @@ function TaskCard({ onOpen, task }) {
               </span>
             )}
 
-            {task.reminderEmailEnabled && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-1.5 py-0.5 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
-                <Mail size={10} className="shrink-0" />
-                {task.reminderEmailStatus === "sent"
-                  ? "Email sent"
-                  : "Email on"}
-              </span>
-            )}
           </div>
 
           {/* Tags */}

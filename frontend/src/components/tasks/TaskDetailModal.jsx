@@ -6,7 +6,6 @@ import {
   Circle,
   Flag,
   Folder,
-  Mail,
   Star,
   X,
 } from "lucide-react";
@@ -158,15 +157,6 @@ function TaskDetailModal({ onClose, task }) {
                 icon={<Bell size={17} className="text-orange-500" />}
                 label={reminderDate}
                 tone="bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
-              />
-              <InfoChip
-                icon={<Mail size={17} className="text-sky-500" />}
-                label={
-                  activeTask.reminderEmailEnabled
-                    ? `Email ${activeTask.reminderEmailStatus || "pending"}`
-                    : "Email off"
-                }
-                tone="bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
               />
             </div>
 

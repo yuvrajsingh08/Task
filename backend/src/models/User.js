@@ -20,10 +20,6 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
-    emailNotificationsEnabled: {
-      type: Boolean,
-      default: true,
-    },
     resetPasswordToken: {
       type: String,
       default: null,

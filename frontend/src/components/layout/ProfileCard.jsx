@@ -2,7 +2,7 @@ import { FiMail, FiUser } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
 function ProfileCard() {
-  const { updateEmailNotifications, user } = useAuth();
+  const { user } = useAuth();
   const initials = user?.name
     ?.split(" ")
     .map((part) => part[0])
@@ -26,15 +26,6 @@ function ProfileCard() {
           <FiMail />
           {user?.email}
         </p>
-        <label className="mt-2 flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-          <input
-            checked={user?.emailNotificationsEnabled !== false}
-            className="h-4 w-4 accent-orange-400"
-            type="checkbox"
-            onChange={(event) => updateEmailNotifications(event.target.checked)}
-          />
-          Email notifications
-        </label>
       </div>
     </section>
   );

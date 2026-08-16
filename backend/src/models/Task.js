@@ -45,10 +45,6 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-    reminderEmailEnabled: {
-      type: Boolean,
-      default: false
-    },
     reminderEmailSentAt: {
       type: Date,
       default: null

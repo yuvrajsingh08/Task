@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Bell, Mail, Plus, Sparkles, X } from "lucide-react";
+import { Bell, Plus, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TASK_STATUSES } from "../../constants/statuses";
 import { useTasks } from "../../context/TaskContext";
@@ -204,24 +204,6 @@ function TaskForm() {
                 />
               </label>
             </div>
-
-            <label className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              <span className="flex items-center gap-2">
-                <Mail size={17} className="text-orange-500" />
-                Enable email reminder for this task
-              </span>
-
-              <input
-                checked={Boolean(form.reminderEmailEnabled)}
-                className="h-5 w-5 shrink-0 accent-orange-400"
-                name="reminderEmailEnabled"
-                type="checkbox"
-                disabled={isSaving}
-                onChange={(event) =>
-                  setFormValue("reminderEmailEnabled", event.target.checked)
-                }
-              />
-            </label>
 
             <div className="mt-3 block">
               <label

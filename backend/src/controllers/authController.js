@@ -21,7 +21,6 @@ const sendAuthResponse = (res, user, statusCode) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      emailNotificationsEnabled: user.emailNotificationsEnabled !== false,
     },
   });
 };
@@ -95,34 +94,8 @@ const getProfile = async (req, res) => {
       id: req.user._id,
       name: req.user.name,
       email: req.user.email,
-      emailNotificationsEnabled: req.user.emailNotificationsEnabled !== false,
     },
   });
-};
-
-const updatePreferences = async (req, res) => {
-  try {
-    const { emailNotificationsEnabled } = req.body;
-
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { emailNotificationsEnabled: Boolean(emailNotificationsEnabled) },
-      { new: true, runValidators: true },
-    ).select("-password");
-
-    res.json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        emailNotificationsEnabled: user.emailNotificationsEnabled,
-      },
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Unable to update preferences", error: error.message });
-  }
 };
 
 const forgotPassword = async (req, res) => {
@@ -226,7 +199,6 @@ module.exports = {
   signup,
   login,
   getProfile,
-  updatePreferences,
   forgotPassword,
   resetPassword,
 };

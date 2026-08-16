@@ -14,7 +14,6 @@ export const emptyTaskForm = {
   tags: [],
   dueDate: "",
   reminderAt: "",
-  reminderEmailEnabled: false,
 };
 
 export function TaskProvider({ children }) {
@@ -356,7 +355,6 @@ export function TaskProvider({ children }) {
         : [],
       dueDate: toUtcISOStringForDate(form.dueDate),
       reminderAt: toUtcISOStringForDateTimeLocal(form.reminderAt),
-      reminderEmailEnabled: Boolean(form.reminderEmailEnabled),
     };
 
     try {
@@ -470,9 +468,6 @@ export function TaskProvider({ children }) {
       reminderAt: task.reminderAt
         ? formatLocalDateTime(task.reminderAt)
         : "",
-      reminderEmailEnabled: Boolean(
-        task.reminderEmailEnabled,
-      ),
     });
 
     setIsTaskModalOpen(true);

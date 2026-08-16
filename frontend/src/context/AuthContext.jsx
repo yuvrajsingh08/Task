@@ -95,21 +95,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const updateEmailNotifications = async (enabled) => {
-    try {
-      const response = await api.patch("/auth/profile/preferences", {
-        emailNotificationsEnabled: enabled,
-      });
-      localStorage.setItem("stackUser", JSON.stringify(response.data.user));
-      setUser(response.data.user);
-    } catch (error) {
-      const message =
-        error.response?.data?.message || "Unable to update email settings";
-      setAuthMessage(message);
-      showToast(message, "error");
-    }
-  };
-
   const logout = () => {
     localStorage.removeItem("stackToken");
     localStorage.removeItem("stackUser");
@@ -126,7 +111,6 @@ export function AuthProvider({ children }) {
         logout,
         signup,
         forgotPassword,
-        updateEmailNotifications,
         user,
       }}>
       {children}

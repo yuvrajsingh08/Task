@@ -8,20 +8,12 @@ const processDueReminders = async () => {
 
   const tasks = await Task.find({
     status: "Pending",
-    reminderEmailEnabled: true,
     reminderAt: { $lte: now },
     reminderEmailSentAt: null,
     reminderEmailStatus: { $ne: "skipped" }
-  }).populate("user", "name email emailNotificationsEnabled");
+  }).populate("user", "name email");
 
   for (const task of tasks) {
-    if (task.user?.emailNotificationsEnabled === false) {
-      task.reminderEmailStatus = "skipped";
-      task.reminderLastError = "User has disabled email notifications.";
-      await task.save();
-      continue;
-    }
-
     try {
       const result = await sendTaskReminderEmail({ task, user: task.user });
 

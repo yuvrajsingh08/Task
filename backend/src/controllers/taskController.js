@@ -15,16 +15,6 @@ const buildTaskPayload = (body) => {
     payload.reminderLastError = "";
   }
 
-  if (Object.prototype.hasOwnProperty.call(body, "reminderEmailEnabled")) {
-    payload.reminderEmailEnabled = Boolean(body.reminderEmailEnabled);
-  }
-
-  if (payload.reminderEmailEnabled === true) {
-    payload.reminderEmailSentAt = null;
-    payload.reminderEmailStatus = "pending";
-    payload.reminderLastError = "";
-  }
-
   if (Object.prototype.hasOwnProperty.call(body, "category")) {
     payload.category = normalizeCategory(body.category);
   }
