@@ -1,9 +1,11 @@
 const sgMail = require("@sendgrid/mail");
 
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "Asia/Kolkata";
+
 const isEmailConfigured = () => {
   return Boolean(
     process.env.SENDGRID_API_KEY &&
-    (process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM)
+      (process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM)
   );
 };
 
@@ -37,10 +39,17 @@ const formatDate = (date) => {
     return "No date set";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Invalid date";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(date));
+    timeZone: APP_TIME_ZONE,
+  }).format(parsedDate);
 };
 
 const escapeHtml = (value) => {
@@ -64,11 +73,16 @@ const sendTaskReminderEmail = async ({ task, user }) => {
   const appName = process.env.APP_NAME || "Stack";
 
   const safeTitle = escapeHtml(task.title);
+
   const safeDescription = escapeHtml(
     task.description || "No description added."
   );
+
   const safePriority = escapeHtml(task.priority);
-  const safeCategory = escapeHtml(task.category || "General");
+
+  const safeCategory = escapeHtml(
+    task.category || "General"
+  );
 
   const textBody = [
     `Reminder for: ${task.title}`,
@@ -83,7 +97,9 @@ const sendTaskReminderEmail = async ({ task, user }) => {
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a;">
-      <h2 style="margin: 0 0 12px;">${appName} reminder</h2>
+      <h2 style="margin: 0 0 12px;">
+        ${appName} reminder
+      </h2>
 
       <p>
         <strong>${safeTitle}</strong>
@@ -97,12 +113,15 @@ const sendTaskReminderEmail = async ({ task, user }) => {
         <li>
           <strong>Priority:</strong> ${safePriority}
         </li>
+
         <li>
           <strong>Category:</strong> ${safeCategory}
         </li>
+
         <li>
           <strong>Due date:</strong> ${formatDate(task.dueDate)}
         </li>
+
         <li>
           <strong>Reminder:</strong> ${formatDate(task.reminderAt)}
         </li>

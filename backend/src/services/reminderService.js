@@ -7,7 +7,6 @@ const processDueReminders = async () => {
   const now = new Date();
 
   const tasks = await Task.find({
-    status: "Pending",
     reminderAt: { $lte: now },
     reminderEmailSentAt: null,
     reminderEmailStatus: { $ne: "skipped" }
