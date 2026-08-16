@@ -277,7 +277,6 @@ const requestGeminiJson = async ({
     .join("")
     .trim();
 
-  console.log("Gemini response:", text);
 
   if (!text) {
     console.error("Gemini returned an empty response:", data);
@@ -748,8 +747,6 @@ const getAiSummary = async (req, res) => {
 
     const localSummary = buildLocalAiSummary(tasks);
     const summary = await getGeminiAiSummary(tasks, localSummary);
-    console.log("local -> ", localSummary)
-    console.log("summar of ai", summary)
     res.json(summary);
   } catch (error) {
     res.status(500).json({
