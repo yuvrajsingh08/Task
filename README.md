@@ -11,8 +11,6 @@ Stack is a smart task management workspace for planning, organizing, and trackin
 
 ## Screenshots
 
-## Screenshots
-
 ### Login / Signup
 <img width="1907" height="1000" alt="Screenshot 2026-08-17 101851" src="https://github.com/user-attachments/assets/5288e240-8a03-4bfd-b286-a23d02646d43" />
 
