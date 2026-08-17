@@ -11,17 +11,23 @@ Stack is a smart task management workspace for planning, organizing, and trackin
 
 ## Screenshots
 
-Use the live website links below to view the current deployed UI.
+## Screenshots
 
-| Screen | Link |
-| --- | --- |
-| Login / Signup | https://task-managemt-frontend.vercel.app/login |
-| Dashboard | https://task-managemt-frontend.vercel.app/dashboard |
-| My Tasks | https://task-managemt-frontend.vercel.app/tasks |
-| Today | https://task-managemt-frontend.vercel.app/today |
-| Upcoming | https://task-managemt-frontend.vercel.app/upcoming |
-| Completed | https://task-managemt-frontend.vercel.app/completed |
-| Smart Summary | https://task-managemt-frontend.vercel.app/ai |
+### Login / Signup
+<img width="1907" height="1000" alt="Screenshot 2026-08-17 101851" src="https://github.com/user-attachments/assets/5288e240-8a03-4bfd-b286-a23d02646d43" />
+
+### Dashboard
+<img width="1902" height="995" alt="Screenshot 2026-08-17 101956" src="https://github.com/user-attachments/assets/489b0945-cd32-4bd5-91de-696ed371cec8" />
+
+
+### My Tasks
+<img width="1903" height="989" alt="Screenshot 2026-08-17 102016" src="https://github.com/user-attachments/assets/bcb2c02a-219c-4276-91ed-7ed4addfffa8" />
+
+
+### Smart Summary
+<img width="1902" height="990" alt="image" src="https://github.com/user-attachments/assets/591d810f-1861-478c-96d2-955754e692ad" />
+
+---
 
 ## Features
 
@@ -80,6 +86,10 @@ Backend `.env`:
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/smart_task_manager
 JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=7d
+APP_NAME=Stack
+FRONTEND_URL=http://localhost:5173
+EMAIL_FROM=your_sender_email
 SENDGRID_API_KEY=your_sendgrid_api_key
 SENDGRID_FROM_EMAIL=your_sender_email
 GOOGLE_GENAI_API_KEY=your_google_genai_api_key
