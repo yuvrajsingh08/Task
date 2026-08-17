@@ -5,9 +5,6 @@ Stack is a smart task management workspace for planning, organizing, and trackin
 ## Live Website
 
 - Website: https://task-managemt-frontend.vercel.app
-- Login: https://task-managemt-frontend.vercel.app/login
-- Dashboard: https://task-managemt-frontend.vercel.app/dashboard
-- Tasks: https://task-managemt-frontend.vercel.app/tasks
 
 ## Screenshots
 
